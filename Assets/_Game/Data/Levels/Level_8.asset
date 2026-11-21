@@ -1,0 +1,101 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fbe043b1ba8c9b4089128bd4d4096ca, type: 3}
+  m_Name: Level_8
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
+  id: 8
+  displayName: "Level 8 \xB7 Cave System"
+  credit: Based on "Level 8 - Cave Systems", https://backrooms-wiki.wikidot.com/level-8 , original by u/Bart0nius and u/avolded, rewritten by Stretchsterz. Licensed CC BY-SA 3.0. Adapted for this game.
+  generator: 5
+  staticLevel: {fileID: 0}
+  baseDrift: 0
+  style:
+    ceiling: 3.4
+    hallChance: 0.12
+    pillars: 2
+    walkers: {x: 18, y: 50}
+    roomChance: 0.25
+    spiralChance: 0.08
+    wiggle: 0.3
+    maxWallLength: 10
+    solidBlocks: 2
+    featureChance: 0.22
+    pitChance: 0
+    manilaChance: 0
+    deadLights: 0.95
+    blackoutChance: 0.08
+    redChance: 0
+    exitChance: 0.22
+    propDensity: 0.02
+    glitchChance: 0.12
+    props:
+    - kind: 19
+      weight: 4
+    - kind: 76
+      weight: 2
+    - kind: 64
+      weight: 1
+    - kind: 63
+      weight: 1
+    - kind: 15
+      weight: 1.5
+    - kind: 16
+      weight: 1.5
+    exits:
+    - kind: 4
+      target: 9
+      weight: 3
+    - kind: 1
+      target: 7
+      weight: 1
+  districts:
+    kinds:
+    - kind: 15
+      weight: 3.5
+    - kind: 0
+      weight: 2.5
+    - kind: 8
+      weight: 0.5
+    roomHeight: {x: 2.6, y: 3.2}
+    wallHeight: 6.4
+    darkRoomChance: 0.85
+    curiosities: 0.4
+    pitFieldChance: 0.02
+    floodChance: 0.015
+    furnitureHeapChance: 0.03
+    manilaChance: 0.02
+    ceilingCap: 0
+    rafters: 0
+    floorGlow: 0
+    wikiZones: 0
+    markedExits: 0
+  wall: {fileID: 2100000, guid: d3c7e29f8cfde1c43ac1bb6f2d135368, type: 2}
+  floor: {fileID: 2100000, guid: 700fb9117075ccf4eaef0fb132028423, type: 2}
+  ceiling: {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  wallpapers:
+  - {fileID: 2100000, guid: d3c7e29f8cfde1c43ac1bb6f2d135368, type: 2}
+  - {fileID: 2100000, guid: e8285fbcc8b48f44083de0c795647342, type: 2}
+  carpets:
+  - {fileID: 2100000, guid: 700fb9117075ccf4eaef0fb132028423, type: 2}
+  - {fileID: 2100000, guid: 3ae88e32674f4d4458c17f6525d5a367, type: 2}
+  ceilings:
+  - {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  - {fileID: 2100000, guid: e6d47fa76fa2f2f47b094f8e0cc7f804, type: 2}
+  waterHeight: 0
+  zoneWater: 0
+  lightColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
+  lightIntensity: 0
+  lightRange: 0
+  ambient: {r: 0.01, g: 0.01, b: 0.015, a: 1}
+  fogColor: {r: 0.02, g: 0.02, b: 0.03, a: 1}
+  fogDensity: 0.05
+  humVolume: 0.02

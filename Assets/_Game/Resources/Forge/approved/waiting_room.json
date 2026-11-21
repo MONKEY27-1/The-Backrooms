@@ -1,0 +1,38 @@
+{
+  "name": "waiting_room",
+  "title": "The Waiting Room",
+  "description": "Rows of chairs facing a reception counter nobody has stood behind in years. The ticket display is stuck on zero.",
+  "width": 12,
+  "depth": 10,
+  "zones": [
+    { "x": 0, "z": 0, "w": 12, "d": 10, "paper": 4, "carpet": 1, "height": 2.6, "lights": "Rows", "dark": false }
+  ],
+  "walls": [
+    { "x0": 3, "z0": 8, "x1": 9, "z1": 8, "kind": "low" }
+  ],
+  "solids": [],
+  "props": [
+    { "kind": "WoodChair", "x": 2.5, "z": 3, "yaw": 0 }, { "kind": "WoodChair", "x": 3.5, "z": 3, "yaw": 0 },
+    { "kind": "WoodChair", "x": 4.5, "z": 3, "yaw": 0 }, { "kind": "WoodChair", "x": 7.5, "z": 3, "yaw": 0 },
+    { "kind": "WoodChair", "x": 8.5, "z": 3, "yaw": 0 }, { "kind": "WoodChair", "x": 9.5, "z": 3, "yaw": 0 },
+    { "kind": "WoodChair", "x": 2.5, "z": 5, "yaw": 0 }, { "kind": "WoodChair", "x": 3.5, "z": 5, "yaw": 0 },
+    { "kind": "WoodChair", "x": 4.5, "z": 5, "yaw": 0 }, { "kind": "WoodChair", "x": 7.5, "z": 5, "yaw": 0 },
+    { "kind": "WoodChair", "x": 8.5, "z": 5, "yaw": 0 }, { "kind": "WoodChair", "x": 9.5, "z": 5, "yaw": 15 },
+    { "kind": "Counter", "x": 6, "z": 8.6, "yaw": 180 },
+    { "kind": "Phone", "x": 6.4, "z": 8.6, "yaw": 180 },
+    { "kind": "CrtTv", "x": 1, "z": 9, "yaw": 150 },
+    { "kind": "TrashCan", "x": 11, "z": 1, "yaw": 0 },
+    { "kind": "Planter", "x": 11, "z": 9, "yaw": 0 }
+  ],
+  "writings": [
+    { "x": 5, "z": 10, "side": -1, "along": "x", "title": "", "text": "NOW SERVING 0", "height": 2.0 },
+    { "x": 12, "z": 2, "side": -1, "along": "z", "title": "", "text": "please remain seated until your copy is called", "height": 1.4 }
+  ],
+  "paintings": [
+    { "x": 0, "z": 3, "side": 1, "along": "z", "title": "A harbour at dusk", "text": "Painted from a postcard someone described to me. I never saw the postcard. The boats are probably wrong.", "height": 1.6 },
+    { "x": 0, "z": 7, "side": 1, "along": "z", "title": "Untitled field", "text": "If you can read this you are facing the wall. Turn around slowly. Nothing is there. Good.", "height": 1.6 }
+  ],
+  "notes": [
+    { "x": 8, "z": 5.6, "title": "Survey log 1", "text": "Day one. I measured the original rooms by the photo: 2.6 m ceilings, mustard carpet, the chevron wall. Out here the chairs are the right chairs but there are too many of them. The copy remembers 'waiting' better than it remembers rooms. - S." }
+  ]
+}

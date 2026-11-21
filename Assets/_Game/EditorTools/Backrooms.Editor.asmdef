@@ -1,0 +1,14 @@
+{
+    "name": "Backrooms.Editor",
+    "rootNamespace": "Backrooms.EditorTools",
+    "references": [
+        "Backrooms",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Runtime",
+        "Unity.RenderPipelines.HighDefinition.Editor",
+        "Unity.Netcode.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

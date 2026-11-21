@@ -1,0 +1,178 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fbe043b1ba8c9b4089128bd4d4096ca, type: 3}
+  m_Name: Level_0
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
+  id: 0
+  displayName: "Level 0 \xB7 Threshold"
+  credit: 'Based on "Level 0" (and its Pillars, Holes, Blackout Zones and Red Rooms) from the Backrooms Wiki, https://backrooms-wiki.wikidot.com/level-0 . Concept: 4chan post; adaptation u/Deveyerr; written by DivineAtlas, Robert Goerman, DrAkimoto. Manila Room: https://backrooms-wiki.wikidot.com/manila-room by Br Miller and neptunium153 (concept Tocharian17). Almond Water: https://backrooms-wiki.wikidot.com/object-1 by 1000dumplings, Natedagreat563, Poliacci. Licensed CC BY-SA 3.0. Adapted for this game.'
+  generator: 1
+  staticLevel: {fileID: 0}
+  baseDrift: 0
+  style:
+    ceiling: 2.8
+    hallChance: 0.12
+    pillars: 2
+    walkers: {x: 36, y: 82}
+    roomChance: 0.3
+    spiralChance: 0.14
+    wiggle: 0.52
+    maxWallLength: 6
+    solidBlocks: 2
+    featureChance: 0.22
+    pitChance: 0
+    manilaChance: 0
+    deadLights: 0.05
+    blackoutChance: 0.1
+    redChance: 0.015
+    exitChance: 0.18
+    propDensity: 0.018
+    glitchChance: 0.12
+    props:
+    - kind: 0
+      weight: 3
+    - kind: 3
+      weight: 3
+    - kind: 2
+      weight: 1.4
+    - kind: 1
+      weight: 1
+    - kind: 4
+      weight: 1.6
+    - kind: 5
+      weight: 1.2
+    - kind: 6
+      weight: 1.4
+    - kind: 7
+      weight: 2.2
+    - kind: 9
+      weight: 1.4
+    - kind: 8
+      weight: 0.45
+    - kind: 10
+      weight: 4
+    - kind: 11
+      weight: 1.5
+    - kind: 12
+      weight: 1.5
+    - kind: 13
+      weight: 0.7
+    - kind: 14
+      weight: 0.6
+    - kind: 15
+      weight: 1.4
+    - kind: 16
+      weight: 1
+    - kind: 19
+      weight: 1.2
+    - kind: 57
+      weight: 0.8
+    - kind: 55
+      weight: 0.35
+    - kind: 54
+      weight: 0.2
+    - kind: 65
+      weight: 0.35
+    - kind: 64
+      weight: 0.15
+    exits:
+    - kind: 0
+      target: 1
+      weight: 3
+    - kind: 1
+      target: 0.2
+      weight: 1
+    - kind: 1
+      target: fun
+      weight: 0.3
+    - kind: 1
+      target: 0.3
+      weight: 0.8
+    - kind: 3
+      target: 9223372036854775807
+      weight: 0.08
+  districts:
+    kinds:
+    - kind: 0
+      weight: 6.5
+    - kind: 1
+      weight: 0.15
+    - kind: 2
+      weight: 0.15
+    - kind: 5
+      weight: 1.1
+    - kind: 3
+      weight: 2.2
+    - kind: 4
+      weight: 2.3
+    - kind: 6
+      weight: 1.8
+    - kind: 7
+      weight: 0.04
+    - kind: 8
+      weight: 0.06
+    - kind: 9
+      weight: 0.04
+    - kind: 10
+      weight: 0.03
+    - kind: 11
+      weight: 0.03
+    - kind: 12
+      weight: 0.03
+    - kind: 14
+      weight: 0.9
+    roomHeight: {x: 2.6, y: 3.2}
+    wallHeight: 6.4
+    darkRoomChance: 0.055
+    curiosities: 0.72
+    pitFieldChance: 0.055
+    floodChance: 0.018
+    furnitureHeapChance: 0.04
+    manilaChance: 0.045
+    ceilingCap: 0
+    rafters: 0
+    floorGlow: 0
+    wikiZones: 1
+    markedExits: 0
+  wall: {fileID: 2100000, guid: ff98e780cab28b940947eb79470899c6, type: 2}
+  floor: {fileID: 2100000, guid: c826637a07cdfda4c87d6563fef4a220, type: 2}
+  ceiling: {fileID: 2100000, guid: a958267057ff67a4887b9dc4865fa223, type: 2}
+  wallpapers:
+  - {fileID: 2100000, guid: ff98e780cab28b940947eb79470899c6, type: 2}
+  - {fileID: 2100000, guid: 19a4792563fedf84ab4ac365956ea9cf, type: 2}
+  - {fileID: 2100000, guid: 8355ed850fea07c409f2bc507ab45dd3, type: 2}
+  - {fileID: 2100000, guid: 42491ccfa1308524f90fcc1e67f2b96e, type: 2}
+  - {fileID: 2100000, guid: d1f2bc72ac13a1949a64dea50b74c41f, type: 2}
+  - {fileID: 2100000, guid: 2a9c5a15cb9ad574eb1902386da66491, type: 2}
+  - {fileID: 2100000, guid: 5aa88330a492d0b4586f99a83ff065d5, type: 2}
+  - {fileID: 2100000, guid: aa24226741f0dc0438de740f9a8dda2d, type: 2}
+  - {fileID: 2100000, guid: ddba4aa3ec8ad124989e2f7c3dc1ac87, type: 2}
+  - {fileID: 2100000, guid: e9ffac40c100d1b4cb4a1db856004e9d, type: 2}
+  - {fileID: 2100000, guid: 19ab8b5c58e85cb438d70d4079a854c7, type: 2}
+  - {fileID: 2100000, guid: 3e1cfcb416bc789419ef4861c83955d1, type: 2}
+  carpets:
+  - {fileID: 2100000, guid: c826637a07cdfda4c87d6563fef4a220, type: 2}
+  - {fileID: 2100000, guid: a26a9c6b1952cda439772ee03db5ebf3, type: 2}
+  - {fileID: 2100000, guid: a91fb0dfeff51684c9248fcd74b913e8, type: 2}
+  - {fileID: 2100000, guid: c7e7d6503bcc4e342ba3dfad98be65c1, type: 2}
+  ceilings:
+  - {fileID: 2100000, guid: a958267057ff67a4887b9dc4865fa223, type: 2}
+  - {fileID: 2100000, guid: 7759b3e3f33000b48930681436c1d732, type: 2}
+  waterHeight: 0
+  zoneWater: 0
+  lightColor: {r: 1, g: 0.96, b: 0.86, a: 1}
+  lightIntensity: 1.3
+  lightRange: 6.5
+  ambient: {r: 0.5, g: 0.47, b: 0.34, a: 1}
+  fogColor: {r: 0.8, g: 0.76, b: 0.6, a: 1}
+  fogDensity: 0.015
+  humVolume: 0.12

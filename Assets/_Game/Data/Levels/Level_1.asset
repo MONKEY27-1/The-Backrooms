@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fbe043b1ba8c9b4089128bd4d4096ca, type: 3}
+  m_Name: Level_1
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
+  id: 1
+  displayName: "Level 1 \xB7 Habitable Zone"
+  credit: Based on "Level 1 - Habitable Zone", https://backrooms-wiki.wikidot.com/level-1 , by Praetor3005 and DivineAtlas (concept EnderMitten; original article u/ThePizzaEater1000). Licensed CC BY-SA 3.0. Adapted for this game.
+  generator: 1
+  staticLevel: {fileID: 0}
+  baseDrift: 0
+  style:
+    ceiling: 2.8
+    hallChance: 0.12
+    pillars: 2
+    walkers: {x: 18, y: 50}
+    roomChance: 0.25
+    spiralChance: 0.08
+    wiggle: 0.3
+    maxWallLength: 10
+    solidBlocks: 2
+    featureChance: 0.22
+    pitChance: 0
+    manilaChance: 0
+    deadLights: 0.06
+    blackoutChance: 0.08
+    redChance: 0
+    exitChance: 0.2
+    propDensity: 0.03
+    glitchChance: 0.12
+    props:
+    - kind: 17
+      weight: 4
+    - kind: 19
+      weight: 4
+    - kind: 35
+      weight: 1.5
+    - kind: 15
+      weight: 1.5
+    - kind: 16
+      weight: 1
+    - kind: 12
+      weight: 1
+    - kind: 3
+      weight: 2
+    - kind: 6
+      weight: 1
+    exits:
+    - kind: 2
+      target: 2
+      weight: 3
+    - kind: 1
+      target: 0
+      weight: 1
+    - kind: 3
+      target: 37
+      weight: 0.5
+    - kind: 1
+      target: fun
+      weight: 0.2
+  districts:
+    kinds:
+    - kind: 16
+      weight: 3.5
+    - kind: 17
+      weight: 1
+    - kind: 18
+      weight: 0.8
+    - kind: 15
+      weight: 2
+    - kind: 20
+      weight: 0.6
+    - kind: 21
+      weight: 0.5
+    - kind: 22
+      weight: 0.5
+    roomHeight: {x: 2.6, y: 3.2}
+    wallHeight: 6.4
+    darkRoomChance: 0.02
+    curiosities: 0.4
+    pitFieldChance: 0.02
+    floodChance: 0.015
+    furnitureHeapChance: 0.03
+    manilaChance: 0.02
+    ceilingCap: 0
+    rafters: 0
+    floorGlow: 0
+    wikiZones: 0
+    markedExits: 1
+  wall: {fileID: 2100000, guid: 919055b56f273a54aae94fcce8bdc371, type: 2}
+  floor: {fileID: 2100000, guid: c84c75368370a1c45b62a7cf508d5322, type: 2}
+  ceiling: {fileID: 2100000, guid: f8be88f316a8d8e4b82e20af0c56201d, type: 2}
+  wallpapers:
+  - {fileID: 2100000, guid: 919055b56f273a54aae94fcce8bdc371, type: 2}
+  - {fileID: 2100000, guid: ce78ebd7e4e02d342a5c05d04cf99f51, type: 2}
+  - {fileID: 2100000, guid: 2862aa0edfa2e2444adeee4cfd6a4287, type: 2}
+  - {fileID: 2100000, guid: c550312f8c5f58648bdd454906979b6c, type: 2}
+  - {fileID: 2100000, guid: 933c6f39207e1f84998e51a6b16ac8d3, type: 2}
+  carpets:
+  - {fileID: 2100000, guid: c84c75368370a1c45b62a7cf508d5322, type: 2}
+  ceilings:
+  - {fileID: 2100000, guid: f8be88f316a8d8e4b82e20af0c56201d, type: 2}
+  waterHeight: 0
+  zoneWater: 0
+  lightColor: {r: 0.9, g: 0.95, b: 1, a: 1}
+  lightIntensity: 1.8
+  lightRange: 8
+  ambient: {r: 0.22, g: 0.23, b: 0.24, a: 1}
+  fogColor: {r: 0.4, g: 0.41, b: 0.42, a: 1}
+  fogDensity: 0.035
+  humVolume: 0.12

@@ -1,0 +1,34 @@
+{
+  "name": "gallery_of_nobody",
+  "title": "The Gallery of Nobody",
+  "description": "A tall, quiet gallery of small landscapes with handwriting on the back. A bench in the middle for someone who never sits.",
+  "width": 14,
+  "depth": 10,
+  "zones": [
+    { "x": 0, "z": 0, "w": 14, "d": 10, "paper": 10, "carpet": 0, "height": 3.4, "lights": "Sparse", "dark": false },
+    { "x": 5, "z": 3, "w": 4, "d": 4, "paper": 10, "carpet": 2, "height": 3.4, "lights": "CenterStrip", "dark": false }
+  ],
+  "walls": [
+    { "x0": 4, "z0": 2, "x1": 4, "z1": 4, "kind": "wall" },
+    { "x0": 10, "z0": 6, "x1": 10, "z1": 8, "kind": "wall" }
+  ],
+  "solids": [],
+  "props": [
+    { "kind": "Bench", "x": 7, "z": 5, "yaw": 90 },
+    { "kind": "Rug", "x": 7, "z": 5, "yaw": 0 },
+    { "kind": "WetFloorSign", "x": 12.5, "z": 1.5, "yaw": 30 }
+  ],
+  "writings": [
+    { "x": 6, "z": 0, "side": 1, "along": "x", "title": "", "text": "DO NOT TURN THE PAINTINGS (turn the paintings)", "height": 1.8 }
+  ],
+  "paintings": [
+    { "x": 2, "z": 10, "side": -1, "along": "x", "title": "Lake, morning", "text": "Survey log 2. The galleries out here hang the same lake again and again, a little greener each time. I think the building is practising.", "height": 1.6 },
+    { "x": 5, "z": 10, "side": -1, "along": "x", "title": "A road", "text": "This road goes to the place the building copied. I have walked it in my head every night. It ends in a carpet.", "height": 1.6 },
+    { "x": 8, "z": 10, "side": -1, "along": "x", "title": "House with one window", "text": "There is a light on in the window. There was not a light on when I hung it.", "height": 1.6 },
+    { "x": 11, "z": 10, "side": -1, "along": "x", "title": "Lake, morning (again)", "text": "greener", "height": 1.6 },
+    { "x": 0, "z": 2, "side": 1, "along": "z", "title": "Self-portrait", "text": "The face was left blank on purpose. The copy did not know what we look like.", "height": 1.6 },
+    { "x": 0, "z": 7, "side": 1, "along": "z", "title": "Corridor", "text": "Survey log 3. Hum pitch drops about a quarter tone every few hundred metres from the origin rooms. Use it like a compass: the truer the hum, the closer you are to the source.", "height": 1.6 },
+    { "x": 3, "z": 0, "side": 1, "along": "x", "title": "Exit", "text": "Every room has a door on each side. I counted. I counted again. Five.", "height": 1.6 }
+  ],
+  "notes": []
+}

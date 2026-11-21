@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fbe043b1ba8c9b4089128bd4d4096ca, type: 3}
+  m_Name: Level_9223372036854775807
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
+  id: 9223372036854775807
+  displayName: "Level 9223372036854775807 \xB7 An Endless Ending"
+  credit: 'Based on Level 9223372036854775807, "An Endless Ending" (the True Final Level), from the Backrooms community wiki: https://ammbackrooms.fandom.com/wiki/Level_9223372036854775807 . Licensed CC BY-SA 3.0. Adapted for this game.'
+  generator: 3
+  staticLevel: {fileID: 0}
+  baseDrift: 0
+  style:
+    ceiling: 3.6
+    hallChance: 0.12
+    pillars: 2
+    walkers: {x: 18, y: 50}
+    roomChance: 0.25
+    spiralChance: 0.08
+    wiggle: 0.3
+    maxWallLength: 10
+    solidBlocks: 2
+    featureChance: 0.22
+    pitChance: 0
+    manilaChance: 0
+    deadLights: 0
+    blackoutChance: 0
+    redChance: 0
+    exitChance: 0
+    propDensity: 0.06
+    glitchChance: 0.12
+    props: []
+    exits: []
+  districts:
+    kinds:
+    - kind: 0
+      weight: 6.5
+    - kind: 1
+      weight: 0.15
+    - kind: 2
+      weight: 0.15
+    - kind: 5
+      weight: 1.1
+    - kind: 3
+      weight: 2.2
+    - kind: 4
+      weight: 2.3
+    - kind: 6
+      weight: 1.8
+    - kind: 7
+      weight: 0.04
+    - kind: 8
+      weight: 0.06
+    - kind: 9
+      weight: 0.04
+    - kind: 10
+      weight: 0.03
+    - kind: 11
+      weight: 0.03
+    - kind: 12
+      weight: 0.03
+    - kind: 14
+      weight: 0.9
+    roomHeight: {x: 2.6, y: 3.2}
+    wallHeight: 6.4
+    darkRoomChance: 0.02
+    curiosities: 0.4
+    pitFieldChance: 0.02
+    floodChance: 0.015
+    furnitureHeapChance: 0.03
+    manilaChance: 0.02
+    ceilingCap: 0
+    rafters: 0
+    floorGlow: 0
+    wikiZones: 0
+    markedExits: 0
+  wall: {fileID: 2100000, guid: 39bdf9a3a70cf1b4c83b35575a13bc75, type: 2}
+  floor: {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
+  ceiling: {fileID: 2100000, guid: 3c802d448c0d3184e974a25b644245fd, type: 2}
+  wallpapers:
+  - {fileID: 2100000, guid: 39bdf9a3a70cf1b4c83b35575a13bc75, type: 2}
+  - {fileID: 2100000, guid: 919055b56f273a54aae94fcce8bdc371, type: 2}
+  carpets:
+  - {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
+  - {fileID: 2100000, guid: c84c75368370a1c45b62a7cf508d5322, type: 2}
+  ceilings:
+  - {fileID: 2100000, guid: 3c802d448c0d3184e974a25b644245fd, type: 2}
+  - {fileID: 2100000, guid: f8be88f316a8d8e4b82e20af0c56201d, type: 2}
+  waterHeight: 0
+  zoneWater: 0
+  lightColor: {r: 1, g: 1, b: 1, a: 1}
+  lightIntensity: 1.15
+  lightRange: 12
+  ambient: {r: 0.62, g: 0.63, b: 0.66, a: 1}
+  fogColor: {r: 0.88, g: 0.89, b: 0.92, a: 1}
+  fogDensity: 0.018
+  humVolume: 0.02

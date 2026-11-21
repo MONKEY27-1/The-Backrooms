@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12695742b20d9c7488bcc1c5dc3191f7, type: 3}
+  m_Name: LevelCatalog
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelCatalog
+  levels:
+  - {fileID: 11400000, guid: 3dca49ecd0a606a42b0ab217f62b64bf, type: 2}
+  - {fileID: 11400000, guid: 3f9c4413dd76e734c8f23613ffc681e0, type: 2}
+  - {fileID: 11400000, guid: dd10c59e7f3122e49af27d9fde2882b8, type: 2}
+  - {fileID: 11400000, guid: 6167d136b7e5c6a47afe449b6660a553, type: 2}
+  - {fileID: 11400000, guid: 7870b91cee495064cafe3c04236b1f87, type: 2}
+  - {fileID: 11400000, guid: 79a9b0b9b5d8d2843bbf3f81c86b8bb9, type: 2}
+  - {fileID: 11400000, guid: 5847fe0ffd193a34480de004a99cbeab, type: 2}
+  - {fileID: 11400000, guid: 1c61a1b747460494999fd804358c37a6, type: 2}
+  - {fileID: 11400000, guid: 4b8ff95c70753e648aeba7572318151b, type: 2}
+  - {fileID: 11400000, guid: f296534619180cf4f8eaaf01deea44a3, type: 2}
+  - {fileID: 11400000, guid: 4d7cc22b0e89ec0468c8334e1aef208d, type: 2}
+  - {fileID: 11400000, guid: e32fef2a934f73a4b8a9f9cde68fd39e, type: 2}
+  - {fileID: 11400000, guid: 27bc9da48fce0e1459871802004d8e68, type: 2}
+  - {fileID: 11400000, guid: 0a62a2b3118c91a4594463754ccbe3f9, type: 2}
+  - {fileID: 11400000, guid: f98ba786f9121894fbfdf3b385ff7ecc, type: 2}
+  - {fileID: 11400000, guid: c18d99f06c4f4aef94f27e7ef2d937a1, type: 2}
+  - {fileID: 11400000, guid: ffa92a9100bf6a2429a56fad62b70872, type: 2}
+  - {fileID: 11400000, guid: 0566e2c706faddb42852b8875e4ae8db, type: 2}
+  propPaints:
+  - {fileID: 2100000, guid: 9df0f7d515317814488321b76dfbbc6e, type: 2}
+  - {fileID: 2100000, guid: 9d5c0569b7489744a8a0fb9161672730, type: 2}
+  - {fileID: 2100000, guid: a3e03206806f53d41967e64d405e45df, type: 2}
+  - {fileID: 2100000, guid: 717071db17755a84aa5d20929d421197, type: 2}
+  - {fileID: 2100000, guid: ba3dcb295570310408d26efd3f877cd6, type: 2}
+  - {fileID: 2100000, guid: 17afde6c51410cc41b3a39c295137199, type: 2}
+  - {fileID: 2100000, guid: 6581b9e165bd9634fa2d5da5a31691a9, type: 2}
+  - {fileID: 2100000, guid: 39556cf46e905b34788ef222a1b5b141, type: 2}
+  - {fileID: 2100000, guid: 779b2f0a6f06c7f41aff9f05794e7276, type: 2}
+  - {fileID: 2100000, guid: 2e16a95ae788a244b9a482a8bb6708e3, type: 2}
+  - {fileID: 2100000, guid: d162d7808d9d5874aa164756696362bc, type: 2}
+  - {fileID: 2100000, guid: 921723aa1c9d1c841a78d5dd4efcfac1, type: 2}
+  - {fileID: 2100000, guid: 387f13ecbfcbfad42947b48ebf1d319b, type: 2}
+  - {fileID: 2100000, guid: a483dcd148a37cb49bf7c337e2d7a12e, type: 2}
+  - {fileID: 2100000, guid: 938cff0785354144a9a2cb31a53652ce, type: 2}
+  - {fileID: 2100000, guid: bb2733181406aa44983d7a776c8146e9, type: 2}
+  - {fileID: 2100000, guid: 132faac23f9197f46b0a73ab611b3926, type: 2}
+  - {fileID: 2100000, guid: 1518e0e9c2d841a4996c68bed8b5477e, type: 2}
+  - {fileID: 2100000, guid: 0a6dd0cc9534fa544bb1ae58b0db9685, type: 2}
+  - {fileID: 2100000, guid: d97990f0de61d7847a7c03445fa79d5f, type: 2}
+  - {fileID: 2100000, guid: e5893b7d4f84c6648937441a3d50c0a6, type: 2}
+  - {fileID: 2100000, guid: de34dc6efa7724648adcda2baeb3d048, type: 2}
+  - {fileID: 2100000, guid: eba22493755b7314b9ed253611ec9e49, type: 2}
+  - {fileID: 2100000, guid: 70c435a98af5c5c409cf00f22ae2f20d, type: 2}
+  - {fileID: 2100000, guid: 3a416696dc864148995524a6c88eb506, type: 2}
+  panelLit: {fileID: 2100000, guid: 1f564e27118b2c24b98e8230136ec629, type: 2}
+  panelDead: {fileID: 2100000, guid: cedc13e2ecfcae7469af948646f4d508, type: 2}
+  water: {fileID: 2100000, guid: 5a1edb8a582dd144984a6243b2da4ca1, type: 2}
+  waterDeep: {fileID: 2100000, guid: 8f310cc28152487e859660ba2f7f21d5, type: 2}
+  waterCaustics: {fileID: 2100000, guid: bfffbbe93a274f968ecdc72fff36563f, type: 2}
+  waterCausticsDeep: {fileID: 2100000, guid: cb7bc2487bbc4f978d15d38962e64d52, type: 2}
+  redWall: {fileID: 2100000, guid: 3fd8f114d674d4d4e83c3972e6c4df27, type: 2}
+  redFloor: {fileID: 2100000, guid: 19f8a9c046abc29489015ddb083790b0, type: 2}
+  manilaWall: {fileID: 2100000, guid: c247e5bd7f4c7ab42a7b2b16b351a669, type: 2}
+  trims:
+  - {fileID: 2100000, guid: 8a67bcea13e8a424cbed2972ed3e422f, type: 2}
+  - {fileID: 2100000, guid: d388bedb77fe54f45824444dc6121cf3, type: 2}
+  - {fileID: 2100000, guid: 544b96011944d2547af593ccf05f1fac, type: 2}
+  woodFloor: {fileID: 2100000, guid: 297c5527b224bb645a4d6f6327cd91c0, type: 2}
+  tileFloor: {fileID: 2100000, guid: 4b354fab7abdb2b43ab60ea917d5798d, type: 2}
+  concreteFloor: {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}

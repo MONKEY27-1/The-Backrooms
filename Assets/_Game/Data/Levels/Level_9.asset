@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fbe043b1ba8c9b4089128bd4d4096ca, type: 3}
+  m_Name: Level_9
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
+  id: 9
+  displayName: "Level 9 \xB7 Darkened Suburbs"
+  credit: Based on "Level 9 - The Suburbs", https://backrooms-wiki.wikidot.com/level-9 , original by u/Bart0nius, rewritten by Stretchsterz. Licensed CC BY-SA 3.0. Adapted for this game.
+  generator: 6
+  staticLevel: {fileID: 0}
+  baseDrift: 0
+  style:
+    ceiling: 24
+    hallChance: 0.12
+    pillars: 2
+    walkers: {x: 18, y: 50}
+    roomChance: 0.25
+    spiralChance: 0.08
+    wiggle: 0.3
+    maxWallLength: 10
+    solidBlocks: 2
+    featureChance: 0.22
+    pitChance: 0
+    manilaChance: 0
+    deadLights: 0.6
+    blackoutChance: 0.08
+    redChance: 0
+    exitChance: 0.2
+    propDensity: 0.035
+    glitchChance: 0.12
+    props:
+    - kind: 86
+      weight: 2
+    - kind: 85
+      weight: 2
+    - kind: 82
+      weight: 2
+    - kind: 4
+      weight: 3
+    - kind: 45
+      weight: 2
+    - kind: 19
+      weight: 2
+    - kind: 15
+      weight: 1
+    - kind: 16
+      weight: 1
+    exits:
+    - kind: 1
+      target: 0
+      weight: 1
+    - kind: 4
+      target: 8
+      weight: 1.5
+  districts:
+    kinds:
+    - kind: 1
+      weight: 3.5
+    - kind: 4
+      weight: 2
+    - kind: 6
+      weight: 1.5
+    roomHeight: {x: 2.6, y: 3.2}
+    wallHeight: 6.4
+    darkRoomChance: 0.02
+    curiosities: 0.4
+    pitFieldChance: 0.02
+    floodChance: 0.015
+    furnitureHeapChance: 0.03
+    manilaChance: 0.02
+    ceilingCap: 0
+    rafters: 0
+    floorGlow: 0
+    wikiZones: 0
+    markedExits: 0
+  wall: {fileID: 2100000, guid: fce67fdf7d38c684e902bd8a96215248, type: 2}
+  floor: {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
+  ceiling: {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  wallpapers:
+  - {fileID: 2100000, guid: fce67fdf7d38c684e902bd8a96215248, type: 2}
+  - {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
+  - {fileID: 2100000, guid: 933c6f39207e1f84998e51a6b16ac8d3, type: 2}
+  carpets:
+  - {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
+  - {fileID: 2100000, guid: 297c5527b224bb645a4d6f6327cd91c0, type: 2}
+  ceilings:
+  - {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  waterHeight: 0
+  zoneWater: 0
+  lightColor: {r: 1, g: 0.68, b: 0.28, a: 1}
+  lightIntensity: 1.4
+  lightRange: 16
+  ambient: {r: 0.03, g: 0.035, b: 0.05, a: 1}
+  fogColor: {r: 0.04, g: 0.05, b: 0.08, a: 1}
+  fogDensity: 0.03
+  humVolume: 0.03

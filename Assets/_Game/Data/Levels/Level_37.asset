@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fbe043b1ba8c9b4089128bd4d4096ca, type: 3}
+  m_Name: Level_37
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
+  id: 37
+  displayName: "Level 37 \xB7 Sublimity (Poolrooms)"
+  credit: Based on "Level 37 - Sublimity", https://backrooms-wiki.wikidot.com/level-37 , by egglord (critique Sariastuff). Licensed CC BY-SA 3.0. Adapted for this game.
+  generator: 1
+  staticLevel: {fileID: 0}
+  baseDrift: 0
+  style:
+    ceiling: 2.8
+    hallChance: 0.12
+    pillars: 2
+    walkers: {x: 18, y: 50}
+    roomChance: 0.25
+    spiralChance: 0.08
+    wiggle: 0.3
+    maxWallLength: 10
+    solidBlocks: 2
+    featureChance: 0.22
+    pitChance: 0
+    manilaChance: 0
+    deadLights: 0.08
+    blackoutChance: 0.12
+    redChance: 0
+    exitChance: 0.08
+    propDensity: 0
+    glitchChance: 0.12
+    props: []
+    exits:
+    - kind: 0
+      target: 0
+      weight: 1
+    - kind: 1
+      target: 2
+      weight: 0.5
+  districts:
+    kinds:
+    - kind: 19
+      weight: 1
+    roomHeight: {x: 2.6, y: 3.2}
+    wallHeight: 7.5
+    darkRoomChance: 0.18
+    curiosities: 0.4
+    pitFieldChance: 0.02
+    floodChance: 0.015
+    furnitureHeapChance: 0.03
+    manilaChance: 0.02
+    ceilingCap: 0
+    rafters: 0
+    floorGlow: 0
+    wikiZones: 0
+    markedExits: 0
+  wall: {fileID: 2100000, guid: a8ab86192cffc1945baf2c767e71e4bd, type: 2}
+  floor: {fileID: 2100000, guid: fedd67f02970ee0468b690bd7335cb2f, type: 2}
+  ceiling: {fileID: 2100000, guid: a8ab86192cffc1945baf2c767e71e4bd, type: 2}
+  wallpapers:
+  - {fileID: 2100000, guid: a8ab86192cffc1945baf2c767e71e4bd, type: 2}
+  carpets:
+  - {fileID: 2100000, guid: fedd67f02970ee0468b690bd7335cb2f, type: 2}
+  ceilings:
+  - {fileID: 2100000, guid: a8ab86192cffc1945baf2c767e71e4bd, type: 2}
+  waterHeight: 0.95
+  zoneWater: 1
+  lightColor: {r: 0.82, g: 0.96, b: 1, a: 1}
+  lightIntensity: 1.45
+  lightRange: 6.5
+  ambient: {r: 0.44, g: 0.54, b: 0.57, a: 1}
+  fogColor: {r: 0.68, g: 0.82, b: 0.85, a: 1}
+  fogDensity: 0.022
+  humVolume: 0.02

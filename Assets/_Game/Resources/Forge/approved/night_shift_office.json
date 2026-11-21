@@ -1,0 +1,37 @@
+{
+  "name": "night_shift_office",
+  "title": "Night Shift",
+  "description": "An office with every light dead except over one cluster of desks, where a copier still warms up by itself.",
+  "width": 14,
+  "depth": 12,
+  "zones": [
+    { "x": 0, "z": 0, "w": 14, "d": 12, "paper": 9, "carpet": 1, "height": 2.6, "lights": "Grid", "dark": true },
+    { "x": 4, "z": 4, "w": 6, "d": 4, "paper": 9, "carpet": 1, "height": 2.6, "lights": "CenterStrip", "dark": false }
+  ],
+  "walls": [
+    { "x0": 1, "z0": 9, "x1": 6, "z1": 9, "kind": "low" },
+    { "x0": 8, "z0": 9, "x1": 13, "z1": 9, "kind": "low" },
+    { "x0": 4, "z0": 9, "x1": 4, "z1": 11, "kind": "low" },
+    { "x0": 10, "z0": 9, "x1": 10, "z1": 11, "kind": "low" }
+  ],
+  "solids": [],
+  "props": [
+    { "kind": "Desk", "x": 5.5, "z": 5, "yaw": 0 }, { "kind": "OfficeChair", "x": 5.5, "z": 4.4, "yaw": 0 },
+    { "kind": "Desk", "x": 8.5, "z": 5, "yaw": 0 }, { "kind": "OfficeChair", "x": 8.5, "z": 4.4, "yaw": 200 },
+    { "kind": "Desk", "x": 5.5, "z": 7, "yaw": 180 }, { "kind": "OfficeChair", "x": 5.5, "z": 7.6, "yaw": 170 },
+    { "kind": "Desk", "x": 8.5, "z": 7, "yaw": 180 },
+    { "kind": "Copier", "x": 12.5, "z": 6, "yaw": 270 },
+    { "kind": "FilingCabinet", "x": 1, "z": 1, "yaw": 90 }, { "kind": "FilingCabinet", "x": 1, "z": 2, "yaw": 90 },
+    { "kind": "Whiteboard", "x": 0.2, "z": 6, "yaw": 90 },
+    { "kind": "CardboardBox", "x": 12, "z": 1.5, "yaw": 20 },
+    { "kind": "Phone", "x": 8.8, "z": 5.1, "yaw": 0 }
+  ],
+  "writings": [
+    { "x": 6, "z": 12, "side": -1, "along": "x", "title": "", "text": "WE ARE STILL HERE. NOBODY CLOCKED OUT.", "height": 1.7 }
+  ],
+  "paintings": [],
+  "notes": [
+    { "x": 7, "z": 6, "title": "Survey log 4", "text": "Found desks with work still on them: forms filled in with the word 'copy' in every box. Whoever made this place watched people work and only understood the shape of it. I am going to follow the hum back toward the photo rooms. - S." },
+    { "x": 2.5, "z": 10.5, "title": "Sticky note", "text": "If the copier starts on its own, leave. Do not look at what it prints." }
+  ]
+}

@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fbe043b1ba8c9b4089128bd4d4096ca, type: 3}
+  m_Name: Level_19
+  m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
+  id: 19
+  displayName: "Level 19 \xB7 Attic Floorboards"
+  credit: Based on "Level 19 - Attic Floorboards", https://backrooms-wiki.wikidot.com/level-19 , written by Boring Talking, originally rewritten by 1000Dumplings, original author u/BendyBoi3393. Licensed CC BY-SA 3.0. Adapted for this game.
+  generator: 1
+  staticLevel: {fileID: 0}
+  baseDrift: 0.15
+  style:
+    ceiling: 2.8
+    hallChance: 0.12
+    pillars: 2
+    walkers: {x: 18, y: 50}
+    roomChance: 0.25
+    spiralChance: 0.08
+    wiggle: 0.3
+    maxWallLength: 10
+    solidBlocks: 2
+    featureChance: 0.22
+    pitChance: 0
+    manilaChance: 0
+    deadLights: 0.7
+    blackoutChance: 0.08
+    redChance: 0
+    exitChance: 0.3
+    propDensity: 0.08
+    glitchChance: 0.12
+    props:
+    - kind: 3
+      weight: 6
+    - kind: 36
+      weight: 3
+    - kind: 17
+      weight: 2
+    - kind: 25
+      weight: 1
+    - kind: 32
+      weight: 1
+    - kind: 28
+      weight: 1
+    - kind: 30
+      weight: 1
+    - kind: 24
+      weight: 0.5
+    - kind: 21
+      weight: 1
+    exits:
+    - kind: 1
+      target: 0
+      weight: 1
+    - kind: 1
+      target: 1
+      weight: 0.4
+  districts:
+    kinds:
+    - kind: 0
+      weight: 3
+    - kind: 6
+      weight: 2
+    - kind: 8
+      weight: 0.4
+    - kind: 4
+      weight: 0.6
+    roomHeight: {x: 2.6, y: 3.2}
+    wallHeight: 6.4
+    darkRoomChance: 0.02
+    curiosities: 0.4
+    pitFieldChance: 0.08
+    floodChance: 0.015
+    furnitureHeapChance: 0.03
+    manilaChance: 0.02
+    ceilingCap: 2.4
+    rafters: 1
+    floorGlow: 0.05
+    wikiZones: 0
+    markedExits: 0
+  wall: {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
+  floor: {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
+  ceiling: {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
+  wallpapers:
+  - {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
+  carpets:
+  - {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
+  ceilings:
+  - {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
+  waterHeight: 0
+  zoneWater: 0
+  lightColor: {r: 1, g: 0.82, b: 0.6, a: 1}
+  lightIntensity: 0.8
+  lightRange: 6.5
+  ambient: {r: 0.24, g: 0.17, b: 0.11, a: 1}
+  fogColor: {r: 0.22, g: 0.15, b: 0.09, a: 1}
+  fogDensity: 0.04
+  humVolume: 0.02
