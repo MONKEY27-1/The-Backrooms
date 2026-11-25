@@ -11,9 +11,8 @@ namespace Backrooms.Game
     public static class DeathRagdoll
     {
         static readonly Queue<GameObject> bodies = new Queue<GameObject>();
-        static Material blood;
 
-        public static void Spawn(Vector3 position, Quaternion rotation, Vector3 impulse = default)
+        public static void Spawn(Vector3 position, Quaternion rotation, Vector3 impulse = default, string monsterCause = null)
         {
             while (bodies.Count >= 32)
             {
@@ -65,7 +64,8 @@ namespace Backrooms.Game
             var hips = FindDeep(go.transform, "Hips");
             if (hips != null && hips.TryGetComponent(out Rigidbody torso))
                 torso.AddForce((impulse.sqrMagnitude > 0.01f ? impulse : (rotation * Vector3.back + Vector3.up * 0.35f) * 1.8f), ForceMode.Impulse);
-            MakeBlood(position);
+            Creatures.Blood.Burst(position);
+            Creatures.GoreKit.DismemberCorpse(go.transform, isChild: false, monsterCause);
             bodies.Enqueue(go);
             Object.Destroy(go, 150f);
         }
@@ -118,22 +118,6 @@ namespace Backrooms.Game
                 if (found != null) return found;
             }
             return null;
-        }
-
-        static void MakeBlood(Vector3 position)
-        {
-            if (blood == null) blood = Backrooms.World.HdMat.Make(new Color(0.12f, 0.004f, 0.008f), 0.15f);
-            Vector3 ground = position;
-            if (Physics.Raycast(position + Vector3.up * 1.5f, Vector3.down, out var hit, 5f, ~0, QueryTriggerInteraction.Ignore))
-                ground = hit.point + Vector3.up * 0.012f;
-            var stain = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            stain.name = "Blood stain";
-            stain.transform.position = ground;
-            stain.transform.localScale = new Vector3(0.8f, 0.006f, 0.65f);
-            var collider = stain.GetComponent<Collider>();
-            if (collider != null) Object.Destroy(collider);
-            stain.GetComponent<Renderer>().sharedMaterial = blood;
-            Object.Destroy(stain, 150f);
         }
     }
 }

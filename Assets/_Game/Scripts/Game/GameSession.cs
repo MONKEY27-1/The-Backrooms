@@ -36,9 +36,15 @@ namespace Backrooms.Game
         Flickering flickering;
         EnvironmentalEvents environmentalEvents;
         Warehouse warehouse;
+        Level3Events level3;
+        Level6Events level6;
+        Level7Events level7;
+        Level8Events level8;
+        Level9Events level9;
         Objectives objectives;
         PartyLevel party;
         PartyLure lure;
+        PartyScenes partyScenes;
         Courtyard courtyard;
         WindowLure windowLure;
         PlayerHud hud;
@@ -86,6 +92,7 @@ namespace Backrooms.Game
             if (tools != null)
             {
                 tools.PickedUp += p => { picked.Add(p.Id); save.picked.Add(p.Id); };
+                tools.Threw += ThrowShared;
                 tools.Read += r => { picked.Add(r.Id); save.picked.Add(r.Id); save.logbook.Add(r.Title + "\n" + r.Text); };
                 tools.GoalTaken += i => { if (objectives != null) objectives.Took(i); };
                 tools.Pried += b =>
@@ -95,11 +102,21 @@ namespace Backrooms.Game
                     MakeNoise(b.transform.position, 30f);   // splintering wood carries
                 };
             }
+            BoardedDoor.Smashed = b =>
+            {
+                picked.Add(b.Id);
+                if (save != null) save.picked.Add(b.Id);
+                Share(Act.Boards, b.Id);
+                MakeNoise(b.transform.position, 20f);
+                Destroy(b.gameObject);
+            };
             streamer.IsPicked = id => picked.Contains(id);
             ForgeLibrary.Reload();   // pick up rooms added since the last run
             if (!TryGetComponent(out director)) director = gameObject.AddComponent<FearDirector>();   // (not ??: Unity fakes null)
             director.Init(streamer);
             director.CaughtPlayer += OnCaught;
+            PlayerAgent.Downed -= OnCaught;
+            PlayerAgent.Downed += OnCaught;   // wounds ran out (a Hound): the same as being caught
             player.Landed += OnLanded;
             player.Drowned += OnPit;
             tracker = gameObject.AddComponent<ProgressTracker>();
@@ -131,6 +148,7 @@ namespace Backrooms.Game
             Difficulty.Level = 1;
             Difficulty.Mode = GameMode.Survival;
             DistrictLayout.ForgetShifts();
+            VanishingExit.Forget();
         }
 
         /// The player's body, tools and HUD on or off (menus, pause).
@@ -231,7 +249,8 @@ namespace Backrooms.Game
             player.GetComponent<CharacterController>().enabled = false;   // the backdrop moves the body by hand
             backdrop = gameObject.AddComponent<MenuBackdrop>();
             backdrop.Init(player.transform, player.GetComponentInChildren<Camera>(), streamer, catalog, theme);
-            menus.ShowMain();
+            Creatures.Blood.Clear();
+            ContentWarning.Show(this, menus.ShowMain);
         }
 
         /// Starts a run: a saved world, or a brand-new one when `slot` is null.
@@ -280,8 +299,29 @@ namespace Backrooms.Game
             GameSettings.Save();
         }
 
+        /// A Level 3 Sanctum: from now on you wake up here when caught in this level.
+        public void SetShrineCheckpoint(Vector3 at)
+        {
+            if (save == null) return;
+            save.shrineLevel = save.levelId;
+            save.shrineX = at.x;
+            save.shrineY = at.y;
+            save.shrineZ = at.z;
+            Persist();
+        }
+
         void ClearLevelEvents()
         {
+            if (level3 != null) Destroy(level3);
+            level3 = null;
+            if (level7 != null) Destroy(level7);
+            level7 = null;
+            if (level8 != null) Destroy(level8);
+            level8 = null;
+            if (level9 != null) Destroy(level9);
+            level9 = null;
+            if (level6 != null) Destroy(level6);
+            level6 = null;
             if (collapse != null) Destroy(collapse);
             if (flickering != null) Destroy(flickering);
             if (pool != null) Destroy(pool);
@@ -294,6 +334,8 @@ namespace Backrooms.Game
             objectives = null;
             if (party != null) Destroy(party);
             party = null;
+            if (partyScenes != null) Destroy(partyScenes);
+            partyScenes = null;
             if (lure != null) Destroy(lure);
             lure = null;
             if (courtyard != null) Destroy(courtyard);
@@ -322,6 +364,13 @@ namespace Backrooms.Game
                 status.Stamina = 1f;
                 status.AlmondWater = save.almondWater;
                 status.Batteries = save.batteries;
+                status.Glowsticks = save.glowsticks;
+                status.Exterminators = save.exterminators;
+                status.FirstAid = save.firstAid;
+                status.Repellent = save.repellent;
+                status.Flares = save.flares;
+                status.Infection = save.infection;
+                status.Health = save.health > 0f ? save.health : 1f;
                 status.Logbook.Clear();
                 status.Logbook.AddRange(save.logbook);
             }
@@ -342,6 +391,13 @@ namespace Backrooms.Game
                 save.sanity = status.Sanity;
                 save.almondWater = status.AlmondWater;
                 save.batteries = status.Batteries;
+                save.glowsticks = status.Glowsticks;
+                save.exterminators = status.Exterminators;
+                save.firstAid = status.FirstAid;
+                save.repellent = status.Repellent;
+                save.flares = status.Flares;
+                save.infection = status.Infection;
+                save.health = status.Health;
             }
             if (tools != null)
             {
@@ -362,6 +418,13 @@ namespace Backrooms.Game
                 save.sanity = status.Sanity;
                 save.almondWater = status.AlmondWater;
                 save.batteries = status.Batteries;
+                save.glowsticks = status.Glowsticks;
+                save.exterminators = status.Exterminators;
+                save.firstAid = status.FirstAid;
+                save.repellent = status.Repellent;
+                save.flares = status.Flares;
+                save.infection = status.Infection;
+                save.health = status.Health;
             }
             if (tools != null)
             {
@@ -405,6 +468,14 @@ namespace Backrooms.Game
             DistrictLayout.ForgetShifts();
             FirstPersonController.WetFloor = theme.districts.wikiZones;
             if (theme.generator == LevelGenerator.Stairwell) arrival = Vector2Int.zero; // this level has one fixed entrance shaft
+            if (theme.id == "9") arrival = Vector2Int.zero;   // everyone lands where the power line starts
+            if (theme.id == "7") arrival = Vector2Int.zero;   // everyone arrives in the sideways room in the ceiling
+            var caveStart = Vector3.zero;
+            if (theme.id == "8")   // everyone comes up in the entrance pool's cave, or at the last 9th Road marker reached
+            {
+                caveStart = CaveLayout.Entrance(WorldHash.LevelSeed(save.worldSeed, "8"), Mathf.Max(0, CaveMarker()));
+                arrival = ChunkStreamer.ChunkOf(caveStart);
+            }
             streamer.Load(theme, catalog, WorldHash.LevelSeed(save.worldSeed, levelId), arrival);
             ClearLevelEvents();
             if (theme.generator != LevelGenerator.Stairwell && theme.id != "37")
@@ -420,7 +491,7 @@ namespace Backrooms.Game
                 warehouse = gameObject.AddComponent<Warehouse>();
                 warehouse.Init(player, streamer);
             }
-            player.HasSwimControl = theme.zoneWater;
+            player.HasSwimControl = theme.zoneWater || theme.id == "7" || theme.id == "8";   // Level 7: you can dive; Level 8: pools and floods
             player.WaterLevel = theme.waterHeight > 0f && !theme.zoneWater ? theme.waterHeight : float.NegativeInfinity;
             if (DistrictLayout.IsDataCenter(theme))
             {
@@ -438,10 +509,29 @@ namespace Backrooms.Game
                 player.Teleport(new Vector3(16f, 0.05f, 13.4f), 0f);   // stand on the first tread, facing into the spiral
             else if (theme.id == "0" && arrival == Vector2Int.zero)   // the original rooms: stand where the first photo was taken
                 player.Teleport(DistrictLayout.OriginSpawn, DistrictLayout.OriginYaw);
+            else if (theme.id == "7")   // the sideways room; its door is a hole in the floor over the sea
+                player.Teleport(OceanLayout.EntranceSpawn, 90f);
+            else if (theme.id == "9")
+                player.Teleport(SafeSpot(SuburbsLayout.Landing), 45f);
+            else if (theme.id == "8")
+                player.Teleport(caveStart, 0f);
+            else if (save.shrineLevel == levelId && save.levelId == levelId)   // back to the Sanctum you last rested in
+                player.Teleport(SafeSpot(new Vector3(save.shrineX, save.shrineY + 0.05f, save.shrineZ)), 0f);
             else
                 player.Teleport(SafeSpot(new Vector3(arrival.x * MazeLayout.ChunkSize + 1f, 0.05f, arrival.y * MazeLayout.ChunkSize + 1f)), 45f);
+            if (save.levelId != levelId) save.shrineLevel = null;   // a Sanctum only holds you in its own level
 
+            if (theme.id == "3") { level3 = gameObject.AddComponent<Level3Events>(); level3.Init(player, streamer); }
+            if (theme.id == "6") { level6 = gameObject.AddComponent<Level6Events>(); level6.Init(player); }
+            if (theme.id == "7") { level7 = gameObject.AddComponent<Level7Events>(); level7.Init(player, save.goals.Contains("7:gear"), () => { if (!save.goals.Contains("7:gear")) save.goals.Add("7:gear"); Persist(); }); }
+            if (theme.id == "9") { level9 = gameObject.AddComponent<Level9Events>(); level9.Init(player); }
+            if (theme.id == "8")
+            {
+                level8 = gameObject.AddComponent<Level8Events>();
+                level8.Init(player, WorldHash.LevelSeed(save.worldSeed, "8"), CaveMarker(), i => { save.goals.RemoveAll(g => g.StartsWith("8:marker:")); save.goals.Add("8:marker:" + i); Persist(); });
+            }
             if (streamer.IsStatic && theme.id == "fun") { party = gameObject.AddComponent<PartyLevel>(); party.Init(player, streamer, save.worldSeed); }
+            if (!streamer.IsStatic) { partyScenes = gameObject.AddComponent<PartyScenes>(); partyScenes.Init(streamer, director, theme.id); }
             if (theme.id == "0" || theme.id == "1" || theme.id == "2") { lure = gameObject.AddComponent<PartyLure>(); lure.Init(player, streamer); }
             if (streamer.IsStatic && theme.id == "188") { courtyard = gameObject.AddComponent<Courtyard>(); courtyard.Init(player, streamer, save.worldSeed, current != null && current != "188" ? current : "0"); }
             if (theme.id == "0" || theme.id == "1" || theme.id == "2") { windowLure = gameObject.AddComponent<WindowLure>(); windowLure.Init(player, streamer); }
@@ -452,6 +542,8 @@ namespace Backrooms.Game
                 poolAmbience = gameObject.AddComponent<PoolAmbience>();
                 poolAmbience.Init(player, streamer, catalog.water, catalog.waterDeep, catalog.waterCaustics, catalog.waterCausticsDeep);
             }
+            Creatures.Blood.WipeLens();
+            if (levelId != current) Creatures.Blood.Clear();   // waking up on the same level, your blood is still there
             if (levelId != current) tracker.Arrive(levelId, current ?? "");
             current = levelId;
             save.levelId = levelId;
@@ -460,6 +552,13 @@ namespace Backrooms.Game
             if (!save.visited.Contains(levelId)) save.visited.Add(levelId);
             Persist();   // checkpoint: entering a level
             Debug.Log($"Entered {theme.displayName}");
+        }
+
+        /// The furthest 9th Road marker reached in Level 8 (-1: none).
+        int CaveMarker()
+        {
+            var g = save.goals.Find(x => x.StartsWith("8:marker:"));
+            return g != null && int.TryParse(g.Substring("8:marker:".Length), out int i) ? i : -1;
         }
 
         /// The nearest spot to `wanted` where the player fits on open floor, clear of furniture, pits and exits.
@@ -505,6 +604,7 @@ namespace Backrooms.Game
         /// Dropping to the floor below hurts a little: winded, and shaken. Water breaks the fall.
         void OnLanded(float drop)
         {
+            MakeNoise(player.transform.position, Mathf.Clamp(4f + drop * 3f, 4f, 20f));   // a thump: things that hear come to look
             if (!Difficulty.SurvivalEnabled || drop < 3f || status == null || player.transform.position.y < player.WaterLevel + 0.1f) return;
             status.Stamina = Mathf.Min(status.Stamina, 0.15f);
             status.Sanity = Mathf.Max(0f, status.Sanity - Mathf.Clamp01(drop / DistrictLayout.FloorHeight) * 0.08f);
@@ -519,17 +619,32 @@ namespace Backrooms.Game
             else StartCoroutine(Transition(() => Enter(save.levelId, new Vector2Int(save.arrivalX, save.arrivalZ))));   // until the negative level exists
         }
 
-        /// Caught by a hunter: everything goes to static and you wake up back at the checkpoint.
+        /// Caught by a hunter: its full kill plays first; only then static, a co-op body and the checkpoint.
         void OnCaught(PlayerAgent who)
         {
+            if (who != null && who.IsLocal && who.Dying && who.TakeFatalAttack(out var attack) && GoreDeath.HasSequence(attack.Kind))
+            {
+                var victim = who;
+                SyncDeathPose(attack);
+                GoreDeath.Play(victim, attack, () => FinishCaught(victim));
+                return;
+            }
+            FinishCaught(who);
+        }
+
+        void FinishCaught(PlayerAgent who)
+        {
+            if (who != null) { who.ReleaseKiller(); who.Dying = false; }
+            if ((who == null || who.IsLocal) && status != null) { status.Health = 1f; status.Infection = 0f; status.BleedRate = 0f; status.SeveredArm = false; }   // you wake up whole at the checkpoint
             if (Coop.IsOwner)
             {
                 if (who == null || who.IsLocal) DieInCoop();
-                else { var id = ClientOf(who); coop.Send(DieMsg, id, w => { }); OnPlayerDied(id); }
+                else { var id = ClientOf(who); coop.Send(DieMsg, id, w => { }); OnPlayerDied(id, who.DeathCause.HasValue ? (int)who.DeathCause.Value : -1); }
                 return;
             }
             if (who != null && !who.IsLocal) return;
             if (Coop.IsGuest) { DieInCoop(); return; }
+            Creatures.Blood.Burst(player.transform.position);   // in co-op the body left behind does this
             if (Difficulty.Hardcore) { EndHardcoreRun(); return; }
             if (!busy) StartCoroutine(Transition(() => Enter(save.levelId, new Vector2Int(save.arrivalX, save.arrivalZ))));
         }

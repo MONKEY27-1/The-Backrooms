@@ -146,6 +146,40 @@ namespace Backrooms.EditorTools
             var mStairWall = Photo("StaircaseStone", "Concrete042A", Vector2.one / 2.2f, 0.32f, new Color(0.50f, 0.48f, 0.45f));
             var mStairBrick = Photo("TarnishedBrick", "Bricks105", Vector2.one / 1.4f, 0.18f, new Color(0.42f, 0.36f, 0.31f));
             var mStairFloor = Photo("StairStoneFloor", "Concrete042A", Vector2.one / 2.5f, 0.42f, new Color(0.42f, 0.40f, 0.37f));
+            // Natural rock has no UVs: the maps are projected from three sides, in metres.
+            Material Rock(string name, float scale, float smooth, Color tint, string id = "Concrete042A")
+            {
+                var m = Photo(name, id, Vector2.one, smooth, tint);
+                m.SetFloat("_UVBase", 5f);   // triplanar
+                m.SetFloat("_TexWorldScale", scale);
+                m.SetFloat("_NormalScale", 1.8f);
+                HDMaterial.ValidateMaterial(m);
+                return m;
+            }
+            var mCaveRock = Rock("CaveRock", 0.3f, 0.42f, new Color(0.95f, 0.87f, 0.77f));
+            var mSeaRock = Rock("SeaRock", 0.22f, 0.3f, new Color(0.85f, 0.9f, 0.83f));
+            var mSeaBone = Rock("SeaBone", 0.5f, 0.2f, new Color(0.8f, 0.76f, 0.66f), "Plaster007");
+            // Level 9: painted boards, brick, a wet road, shingles, hedges.
+            var mBoards = new[] { new Color(0.78f, 0.77f, 0.72f), new Color(0.42f, 0.5f, 0.58f), new Color(0.5f, 0.55f, 0.44f), new Color(0.74f, 0.66f, 0.44f) };
+            var sidings = new Material[5];
+            for (int i = 0; i < 4; i++) sidings[i] = Lit("Siding" + i, null, Normal("Planks037A"), Vector2.one / 1.8f, 0.25f, 1.4f, mBoards[i], Mask("Planks037A"));   // the boards' relief under paint
+            sidings[4] = Photo("SuburbBrick", "Bricks105", Vector2.one / 1.2f, 0.2f, new Color(0.62f, 0.45f, 0.38f));
+            var mAsphalt = Photo("WetAsphalt", "Concrete046", Vector2.one / 3.5f, 0.72f, new Color(0.13f, 0.13f, 0.14f));
+            var mLawn = Photo("NightLawn", "Carpet016", Vector2.one / 2f, 0.12f, new Color(0.2f, 0.26f, 0.12f));
+            var mSidewalk = Photo("Sidewalk", "Concrete034", Vector2.one / 2.2f, 0.4f, new Color(0.6f, 0.6f, 0.58f));
+            var mBark = Rock("DeadBark", 0.9f, 0.15f, new Color(0.28f, 0.24f, 0.2f), "Planks037A");
+            var mShingle = Rock("Shingles", 0.6f, 0.35f, new Color(0.22f, 0.21f, 0.22f), "Bricks105");
+            var mHedge = Rock("HedgeLeaf", 1.2f, 0.2f, new Color(0.1f, 0.16f, 0.06f), "Carpet014");
+            var mWheat = HdMat.DoubleSided(Flat("FieldGrass", Shader.Find("HDRP/Lit"), new Color(0.3f, 0.27f, 0.12f), 0.15f));
+            var mWire = Flat("PowerCable", Shader.Find("HDRP/Lit"), new Color(0.02f, 0.02f, 0.02f), 0.4f);
+            var mTubes = Flat("PlayTube", Shader.Find("HDRP/Lit"), new Color(0.82f, 0.84f, 0.84f), 0.55f);
+            var mNight = Flat("NightSky", Shader.Find("HDRP/Lit"), new Color(0.004f, 0.005f, 0.008f), 0f);
+            var mPane = HdMat.Emissive(new Color(0.9f, 0.95f, 1f), 60f, null, GetMaterial("TubePane", Shader.Find("HDRP/Lit")));
+            foreach (var m in new[] { mWheat, mWire, mTubes, mNight, mPane }) EditorUtility.SetDirty(m);
+            var mKelp = HdMat.DoubleSided(Flat("Kelp", Shader.Find("HDRP/Lit"), new Color(0.07f, 0.1f, 0.035f), 0.45f));
+            var mFungus = HdMat.Emissive(new Color(0.25f, 1f, 0.7f), 5f, null, GetMaterial("CaveFungus", Shader.Find("HDRP/Lit")));
+            EditorUtility.SetDirty(mKelp);
+            EditorUtility.SetDirty(mFungus);
             var mStairCeiling = Photo("StairDarkCeiling", "Concrete042A", Vector2.one / 4f, 0.15f, new Color(0.12f, 0.115f, 0.11f));
 
             // ---- shared catalog materials ----
@@ -178,6 +212,8 @@ namespace Backrooms.EditorTools
             Paint(PropPaint.Tarp, new Color(0.2f, 0.25f, 0.31f), 0.2f);
             Paint(PropPaint.Concrete, new Color(0.5f, 0.5f, 0.48f), 0.1f);
             Paint(PropPaint.Orange, new Color(0.95f, 0.42f, 0.06f), 0.4f);   // rubber-duck beaks, pool floaties
+            Paint(PropPaint.Brass, new Color(0.78f, 0.6f, 0.26f), 0.65f, 0.9f);   // Level 5: placards, elevator cages, chandeliers
+            Paint(PropPaint.Mahogany, new Color(0.3f, 0.11f, 0.06f), 0.45f);      // Level 5: doors, beds, panelling
 
             var catalog = LoadOrCreate<LevelCatalog>(Root + "/Data/LevelCatalog.asset");
             catalog.propPaints = paints;
@@ -472,52 +508,53 @@ namespace Backrooms.EditorTools
                     t.humVolume = 0.02f;   // sound dies strangely here
                 });
 
-            // Level 3: Electrical Station
+            // Level 3: Electrical Station (rebuilt 2026-11-21 from the wiki page; layout in Level3Layout.cs)
             Level("3", "Level 3 · Electrical Station",
-                "Based on \"Level 3 - Electrical Station\", https://backrooms-wiki.wikidot.com/level-3 , original by u/M654z, rewritten by Natedagreat563. " + License,
-                mTunnelWall, mStorageFloor, mTunnelCeiling, t =>
+                "Based on \"Level 3 - Electrical Station\", https://backrooms-wiki.wikidot.com/level-3 , original by u/M654z, rewritten twice by Natedagreat563. " + License,
+                mBrick, mStorageFloor, mTunnelCeiling, t =>
                 {
                     t.generator = LevelGenerator.Districts;
-                    t.wallpapers = new[] { mTunnelWall, mBrick, mHallConcrete };
+                    t.wallpapers = new[] { mBrick, mTunnelWall, mHallConcrete, mFreshPlaster };   // brick, bare concrete, hall concrete, Sanctum plaster
                     t.districts.kinds = new List<DistrictWeight>
                     {
-                        new DistrictWeight(DistrictKind.ElectricalStation, 5f),
-                        new DistrictWeight(DistrictKind.Storage, 1.5f),
-                        new DistrictWeight(DistrictKind.Corridors, 1f),
+                        new DistrictWeight(DistrictKind.ElectricalStation, 5f),   // the maintenance tunnels and squeezes
+                        new DistrictWeight(DistrictKind.GeneratorHall, 2f),
+                        new DistrictWeight(DistrictKind.AssemblyLine, 1.5f),
+                        new DistrictWeight(DistrictKind.BoilerWorks, 1.2f),
                     };
                     t.districts.darkRoomChance = 0.15f;
                     t.districts.markedExits = true;
+                    t.districts.wallHeight = 8f;   // the Sanctums are nearly eight metres tall (walls stay inside one 8 m floor band)
                     var s = t.style;
-                    s.deadLights = 0.22f;
-                    s.blackoutChance = 0.15f;
-                    s.exitChance = 0.28f;
-                    s.propDensity = 0.045f;
-                    s.glitchChance = 0.18f;
+                    s.deadLights = 0.25f;
+                    s.blackoutChance = 0.12f;
+                    s.exitChance = 0.25f;
+                    s.propDensity = 0.02f;
+                    s.glitchChance = 0.1f;
                     s.exits = new List<ExitLink>
                     {
-                        new ExitLink(ExitKind.Door, "4", 3f),
-                        new ExitLink(ExitKind.Door, "2", 1.8f),
-                        new ExitLink(ExitKind.Elevator, "5", 0.6f),
+                        new ExitLink(ExitKind.Door, "4", 2f),
+                        new ExitLink(ExitKind.Door, "2", 1.5f),
+                        new ExitLink(ExitKind.Elevator, "5", 0.8f),
                     };
                     s.props = new List<PropWeight>
                     {
-                        new PropWeight(PropKind.HangingWires, 4), new PropWeight(PropKind.WallPipes, 3), new PropWeight(PropKind.CeilingPipes, 2),
-                        new PropWeight(PropKind.Boiler, 2), new PropWeight(PropKind.Outlet, 2), new PropWeight(PropKind.OddOutlet, 1.5f),
-                        new PropWeight(PropKind.Battery, 1.5f), new PropWeight(PropKind.AlmondWater, 1), new PropWeight(PropKind.Ladder, 1),
-                        new PropWeight(PropKind.Bucket, 1), new PropWeight(PropKind.CardboardBox, 2), new PropWeight(PropKind.Puddle, 2),
+                        new PropWeight(PropKind.HangingWires, 3), new PropWeight(PropKind.Battery, 1.5f), new PropWeight(PropKind.AlmondWater, 1),
+                        new PropWeight(PropKind.CardboardBox, 1.5f), new PropWeight(PropKind.Bucket, 1), new PropWeight(PropKind.OddOutlet, 1),
+                        new PropWeight(PropKind.Outlet, 1),
                     };
-                    t.lightColor = new Color(1f, 0.88f, 0.65f);
-                    t.lightIntensity = 1.25f;
+                    t.lightColor = new Color(1f, 0.82f, 0.58f);
+                    t.lightIntensity = 1.3f;
                     t.lightRange = 6.5f;
-                    t.ambient = new Color(0.12f, 0.10f, 0.08f);
-                    t.fogColor = new Color(0.18f, 0.14f, 0.10f);
-                    t.fogDensity = 0.045f;
-                    t.humVolume = 0.35f;   // deafening electrical whine & machinery buzz
+                    t.ambient = new Color(0.07f, 0.06f, 0.05f);
+                    t.fogColor = new Color(0.13f, 0.105f, 0.08f);
+                    t.fogDensity = 0.04f;   // hot, dusty haze
+                    t.humVolume = 0.25f;    // the whine of the station under the generators' drone
                 });
 
-            // Level 4: Abandoned Office
+            // Level 4: Abandoned Office (rebuilt 2026-11-21 from the wiki page; layout in Level4Layout.cs)
             Level("4", "Level 4 · Abandoned Office",
-                "Based on \"Level 4 - Abandoned Office\", https://backrooms-wiki.wikidot.com/level-4 , original by u/M654zy, community adaptations. " + License,
+                "Based on \"Level 4 - Abandoned Office\", https://backrooms-wiki.wikidot.com/level-4 , original by u/M654zy, with later community rewrites. " + License,
                 mFreshPlaster, mOfficeCarpet, ceilings[0], t =>
                 {
                     t.generator = LevelGenerator.Districts;
@@ -525,142 +562,144 @@ namespace Backrooms.EditorTools
                     t.carpets = new[] { mOfficeCarpet, carpets[3] };
                     t.districts.kinds = new List<DistrictWeight>
                     {
-                        new DistrictWeight(DistrictKind.OfficeCubicles, 6f),
-                        new DistrictWeight(DistrictKind.Corridors, 1.5f),
+                        new DistrictWeight(DistrictKind.OfficeCubicles, 5f),   // office floors: corridors, offices, conference and break rooms
+                        new DistrictWeight(DistrictKind.OpenPlan, 2f),
+                        new DistrictWeight(DistrictKind.Corridors, 1f),
                     };
                     t.districts.markedExits = true;
+                    t.districts.darkRoomChance = 0.04f;
                     var s = t.style;
-                    s.deadLights = 0.04f;
+                    s.deadLights = 0.05f;
                     s.blackoutChance = 0.02f;
                     s.exitChance = 0.22f;
-                    s.propDensity = 0.035f;
+                    s.propDensity = 0.012f;   // nearly empty: the furniture is gone
                     s.exits = new List<ExitLink>
                     {
                         new ExitLink(ExitKind.Stairs, "5", 3f),
-                        new ExitLink(ExitKind.Door, "3", 1.5f),
-                        new ExitLink(ExitKind.Elevator, "1", 0.5f),
+                        new ExitLink(ExitKind.Stairs, "6", 1.2f),
+                        new ExitLink(ExitKind.Elevator, "3", 1f),
                     };
                     s.props = new List<PropWeight>
                     {
-                        new PropWeight(PropKind.AlmondWater, 6), // Water coolers with abundant Almond Water
-                        new PropWeight(PropKind.OfficeChair, 4), new PropWeight(PropKind.Desk, 3), new PropWeight(PropKind.FilingCabinet, 2),
-                        new PropWeight(PropKind.ConferenceTable, 1.5f), new PropWeight(PropKind.Whiteboard, 1.5f), new PropWeight(PropKind.Copier, 1),
-                        new PropWeight(PropKind.TrashCan, 2), new PropWeight(PropKind.WindowToWall, 1.5f), new PropWeight(PropKind.Battery, 1),
+                        new PropWeight(PropKind.CardboardBox, 1), new PropWeight(PropKind.TrashCan, 1), new PropWeight(PropKind.FallenTile, 0.6f),
+                        new PropWeight(PropKind.AlmondWater, 0.8f), new PropWeight(PropKind.Battery, 0.6f), new PropWeight(PropKind.Outlet, 1),
+                        new PropWeight(PropKind.LightSwitch, 1),
                     };
                     t.lightColor = new Color(0.96f, 0.98f, 1f);
                     t.lightIntensity = 1.4f;
                     t.lightRange = 7.5f;
-                    t.ambient = new Color(0.38f, 0.40f, 0.42f);
-                    t.fogColor = new Color(0.65f, 0.68f, 0.72f);
+                    t.ambient = new Color(0.36f, 0.38f, 0.4f);
+                    t.fogColor = new Color(0.62f, 0.65f, 0.68f);
                     t.fogDensity = 0.012f;
-                    t.humVolume = 0.06f;   // calm, quiet office hum
+                    t.humVolume = 0.07f;   // a quiet office building's hum
                 });
 
-            // Level 5: The Hotel (Terror Hotel)
+            var mDamask = WallVariant("HotelDamask", 6, new Color(0.42f, 0.07f, 0.06f), false, 0.25f);   // deep red paper, gold damask
+            var mMahogany = Lit("MahoganyPanel", woodColor, nWood, Vector2.one / 1.4f, 0.45f, 1f, new Color(0.52f, 0.28f, 0.2f), mWood);
+            var mHotelCream = WallVariant("HotelCream", 0, new Color(0.86f, 0.8f, 0.66f), false, 0.22f);
+            // Level 5: The Hotel (rebuilt 2026-11-21 from the wiki page; layout in Level5Layout.cs)
             Level("5", "Level 5 · The Hotel",
                 "Based on \"Level 5 - Terror Hotel\", https://backrooms-wiki.wikidot.com/level-5 , original by Discord13, rewritten by Stretchsterz (Entity 18 by ratscrapz). " + License,
-                mGildRed, mDryRedCarpet, ceilings[0], t =>
+                mDamask, mDryRedCarpet, mFreshPlaster, t =>
                 {
                     t.generator = LevelGenerator.Districts;
-                    t.wallpapers = new[] { mGildRed, mWoodFloor };
-                    t.carpets = new[] { mDryRedCarpet, mWoodFloor };
+                    t.wallpapers = new[] { mDamask, mMahogany, mHotelCream, mBrick };   // gold trellis on red, mahogany panelling, cream stripes, the boiler room's brick
+                    t.carpets = new[] { mDryRedCarpet, carpets[1] };
                     t.districts.kinds = new List<DistrictWeight>
                     {
-                        new DistrictWeight(DistrictKind.HotelSuites, 6f),
-                        new DistrictWeight(DistrictKind.Corridors, 1.5f),
+                        new DistrictWeight(DistrictKind.HotelSuites, 6f),   // the Main Hall
+                        new DistrictWeight(DistrictKind.Ballroom, 0.6f),    // the Beverly Room
+                        new DistrictWeight(DistrictKind.BoilerWorks, 1.2f), // the Boiler Room
                     };
                     t.districts.markedExits = true;
+                    t.districts.darkRoomChance = 0.05f;
+                    t.districts.wallHeight = 6.4f;
                     var s = t.style;
-                    s.deadLights = 0.08f;
-                    s.exitChance = 0.25f;
-                    s.propDensity = 0.04f;
+                    s.deadLights = 0.12f;
+                    s.exitChance = 0.22f;
+                    s.propDensity = 0.004f;
                     s.exits = new List<ExitLink>
                     {
-                        new ExitLink(ExitKind.Door, "6", 3f),   // Boiler room / dark door down to Lights Out
-                        new ExitLink(ExitKind.Elevator, "4", 1.5f),
-                        new ExitLink(ExitKind.Stairs, "3", 0.8f),
+                        new ExitLink(ExitKind.Stairs, "4", 1.5f),
+                        new ExitLink(ExitKind.Elevator, "3", 1f),
+                        new ExitLink(ExitKind.Door, "6", 0.5f),
+                        new ExitLink(ExitKind.Door, "9", 0.4f),   // the dark wooden door
                     };
-                    s.props = new List<PropWeight>
-                    {
-                        new PropWeight(PropKind.Sofa, 2), new PropWeight(PropKind.Armchair, 2.5f), new PropWeight(PropKind.FloorLamp, 2),
-                        new PropWeight(PropKind.Nightstand, 2), new PropWeight(PropKind.Bookshelf, 1.5f), new PropWeight(PropKind.WoodChair, 2),
-                        new PropWeight(PropKind.OctagonTable, 1.5f), new PropWeight(PropKind.Rug, 2), new PropWeight(PropKind.CoffeeTable, 1.5f),
-                        new PropWeight(PropKind.AlmondWater, 1),
-                    };
-                    t.lightColor = new Color(1f, 0.82f, 0.55f);
+                    s.props = new List<PropWeight> { new PropWeight(PropKind.AlmondWater, 1), new PropWeight(PropKind.Battery, 0.6f) };
+                    t.lightColor = new Color(1f, 0.8f, 0.55f);
                     t.lightIntensity = 1.0f;
                     t.lightRange = 6f;
-                    t.ambient = new Color(0.22f, 0.16f, 0.12f);
-                    t.fogColor = new Color(0.28f, 0.20f, 0.15f);
-                    t.fogDensity = 0.028f;
-                    t.humVolume = 0.04f;   // vintage silence, distant muffled jazz
+                    t.ambient = new Color(0.15f, 0.11f, 0.08f);
+                    t.fogColor = new Color(0.22f, 0.16f, 0.12f);
+                    t.fogDensity = 0.022f;
+                    t.humVolume = 0.03f;   // the buzz of old electric lamps
                 });
 
-            // Level 6: Lights Out
+            // Level 6: Lights Out (rebuilt 2026-11-21 from the wiki page; layout in Level6Layout.cs)
             Level("6", "Level 6 · Lights Out",
-                "Based on \"Level 6 - Lights Out\", https://backrooms-wiki.wikidot.com/level-6 , original by u/ThePizzaEater1000 and u/Mileisbored, rewrites by Abe Venrick, 1000dumplings, Bart0nius. " + License,
-                mStairCeiling, mStairCeiling, mStairCeiling, t =>
+                "Based on \"Level 6 - Lights Out\", https://backrooms-wiki.wikidot.com/level-6 , by Bart0nius (originally with u/ThePizzaEater1000 and u/Mileisbored; earlier rewrites by Abe Venrick and 1000dumplings). " + License,
+                mTunnelWall, mConcreteFloor, mStairCeiling, t =>
                 {
                     t.generator = LevelGenerator.Districts;
-                    t.districts.kinds = new List<DistrictWeight>
-                    {
-                        new DistrictWeight(DistrictKind.Corridors, 4f),
-                        new DistrictWeight(DistrictKind.Maze, 2f),
-                        new DistrictWeight(DistrictKind.NestedRooms, 1f),
-                    };
-                    t.districts.darkRoomChance = 1f;   // completely unlit
+                    t.wallpapers = new[] { mTunnelWall };
+                    t.districts.kinds = new List<DistrictWeight> { new DistrictWeight(DistrictKind.DarkHalls, 1f) };
+                    t.districts.darkRoomChance = 1f;
+                    t.districts.wallHeight = 6.4f;
                     var s = t.style;
                     s.deadLights = 1f;
-                    s.blackoutChance = 1f;
-                    s.exitChance = 0.15f;
-                    s.propDensity = 0.003f;
+                    s.blackoutChance = 0f;
+                    s.exitChance = 0.4f;   // in the dark, the waves must be within earshot more often than not
+                    s.propDensity = 0.002f;
                     s.exits = new List<ExitLink>
                     {
-                        new ExitLink(ExitKind.Stairs, "7", 3f),
+                        new ExitLink(ExitKind.Stairs, "7", 3f),   // follow the waves
                         new ExitLink(ExitKind.Stairs, "5", 1f),
                     };
-                    s.props = new List<PropWeight>
-                    {
-                        new PropWeight(PropKind.Puddle, 1), new PropWeight(PropKind.FallenTile, 1),
-                    };
+                    s.props = new List<PropWeight> { new PropWeight(PropKind.AlmondWater, 1), new PropWeight(PropKind.Battery, 1.5f) };
                     t.lightColor = new Color(0.01f, 0.01f, 0.01f);
                     t.lightIntensity = 0f;
                     t.lightRange = 1f;
-                    t.ambient = Color.black;
+                    t.ambient = new Color(0.004f, 0.004f, 0.005f);
                     t.fogColor = Color.black;
-                    t.fogDensity = 0.08f;
-                    t.humVolume = 0f;   // absolute, suffocating acoustic silence
+                    t.fogDensity = 0.12f;
+                    t.humVolume = 0f;   // a silence you can hear
                 });
 
-            // Level 7: Thalassophobia
+            // Level 7: Thalassophobia (rebuilt 2026-11-22 from the wiki page; generator in OceanLayout.cs)
             Level("7", "Level 7 · Thalassophobia",
-                "Based on \"Level 7 - Thalassophobia\", https://backrooms-wiki.wikidot.com/level-7 , original by Bart0nius and M654z, rewritten by Bart0nius. " + License,
-                mHallConcrete, mStorageFloor, mHallCeiling, t =>
+                "Based on \"Level 7 - Thalassophobia\", https://backrooms-wiki.wikidot.com/level-7 , originals by Bart0nius and M654z, rewritten twice by Bart0nius. " + License,
+                wallpapers[0], mStairFloor, mHallCeiling, t =>
                 {
                     t.generator = LevelGenerator.Ocean;
+                    t.wallpapers = new[] { wallpapers[0] };            // the sideways room's paper
+                    t.carpets = new[] { mSeaRock, carpets[0], mKelp, mSeaBone };   // the sea floor; the room's carpet (up the wall); weed; bones and coral
+                    t.ceilings = new[] { mHallCeiling, ceilings[0] };   // the concrete sky; the room's tiles (the other wall)
                     t.waterHeight = 4.0f;
                     t.zoneWater = false;
-                    t.style.exitChance = 0.15f;
-                    t.lightColor = new Color(0.12f, 0.35f, 0.45f);
-                    t.lightIntensity = 0.4f;
-                    t.lightRange = 10f;
-                    t.ambient = new Color(0.02f, 0.06f, 0.09f);
-                    t.fogColor = new Color(0.015f, 0.07f, 0.11f);
-                    t.fogDensity = 0.045f;
-                    t.humVolume = 0.04f;   // low abyss ocean rumble
+                    t.style.exitChance = 0f;   // the ways out are placed: the cave (Level 8) and the trapdoor in the ring (Level 9)
+                    t.lightColor = new Color(0.55f, 0.75f, 0.9f);
+                    t.lightIntensity = 0.8f;
+                    t.lightRange = 12f;
+                    t.ambient = new Color(0.05f, 0.08f, 0.1f);   // a faint grey daylight from nowhere, near the surface
+                    t.fogColor = new Color(0.05f, 0.07f, 0.09f);
+                    t.fogDensity = 0.035f;   // a sea mist: the far water fades out before the world runs out
+                    t.humVolume = 0f;
                 });
 
             // Level 8: Cave System
             Level("8", "Level 8 · Cave System",
                 "Based on \"Level 8 - Cave Systems\", https://backrooms-wiki.wikidot.com/level-8 , original by u/Bart0nius and u/avolded, rewritten by Stretchsterz. " + License,
-                mStairWall, mStairFloor, mStairCeiling, t =>
+                mCaveRock, mCaveRock, mCaveRock, t =>
                 {
                     t.generator = LevelGenerator.Caves;
+                    t.wallpapers = new[] { mCaveRock };
+                    t.carpets = new[] { mCaveRock, mFungus };
                     t.style.ceiling = 4.5f;
                     t.style.deadLights = 1f;
-                    t.lightColor = new Color(0.2f, 0.2f, 0.2f);
-                    t.lightIntensity = 0f;
-                    t.lightRange = 0f;
+                    t.lightColor = new Color(0.8f, 0.9f, 1f);
+                    t.lightIntensity = 0.6f;   // markers, fungus, the odd lantern
+                    t.lightRange = 6f;
+                    t.style.exitChance = 0f;   // the ways out are placed: the pool (Level 7) and the road's end (Level 9)
                     t.ambient = new Color(0.01f, 0.01f, 0.015f);
                     t.fogColor = new Color(0.02f, 0.02f, 0.03f);
                     t.fogDensity = 0.05f;
@@ -673,13 +712,17 @@ namespace Backrooms.EditorTools
                 mFreshPlaster, mStorageFloor, mStairCeiling, t =>
                 {
                     t.generator = LevelGenerator.Suburbs;
+                    t.wallpapers = new[] { sidings[0], sidings[1], sidings[2], sidings[3], sidings[4], wallpapers[0], wallpapers[1], mFreshPlaster, mOldPlaster };
+                    t.carpets = new[] { mLawn, mAsphalt, mSidewalk, carpets[0], mBark, mHedge, mShingle, mWheat, mWire, mTubes, mPane };
+                    t.ceilings = new[] { mNight, mFreshPlaster };
+                    t.style.exitChance = 0f;   // the way out is placed: the house the wires end at
                     t.style.ceiling = 24.0f;
                     t.lightColor = new Color(1f, 0.68f, 0.28f);
-                    t.lightIntensity = 1.4f;
+                    t.lightIntensity = 4.5f;
                     t.lightRange = 16f;
-                    t.ambient = new Color(0.03f, 0.035f, 0.05f);
-                    t.fogColor = new Color(0.04f, 0.05f, 0.08f);
-                    t.fogDensity = 0.03f;
+                    t.ambient = new Color(0.008f, 0.0095f, 0.014f);
+                    t.fogColor = new Color(0.2f, 0.17f, 0.13f);
+                    t.fogDensity = 0.045f;
                     t.humVolume = 0.03f;   // lonely midnight suburban wind
                 });
 
@@ -846,6 +889,7 @@ namespace Backrooms.EditorTools
             var others = EditorBuildSettings.scenes.Where(s => s.path != ScenePath && File.Exists(s.path));
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) }.Concat(others).ToArray();
             AssetDatabase.SaveAssets();
+            GrimeMaterials.Build();   // grime decals and colour variation (graphics revamp, Stage D)
             DistrictLayout.ClearCache();
             foreach (var t in new[] { paper, stains, carpet016, carpet011, carpet014, ceilingPhoto, concretePhoto }) UnityEngine.Object.DestroyImmediate(t);
             Debug.Log($"Game scene created at {ScenePath} with {levels.Count} levels. Press Play. Dev keys: F6 next level, F9 new game.");
@@ -951,6 +995,7 @@ namespace Backrooms.EditorTools
             var controller = player.AddComponent<FirstPersonController>();
             player.AddComponent<PlayerStatus>();
             player.AddComponent<PlayerTools>();
+            player.AddComponent<FirstPersonArms>();
             player.AddComponent<PlayerHud>();
             Assign(controller, ("cameraPivot", pivot.transform), ("footstepSource", feet));
             return controller;
@@ -1009,7 +1054,7 @@ namespace Backrooms.EditorTools
             var mp = metal != null && metal.width == w ? metal.GetPixels32() : null;
             var outPx = new Color32[rp.Length];
             for (int i = 0; i < rp.Length; i++)
-                outPx[i] = new Color32(mp != null ? mp[i].r : (byte)0, ap != null ? ap[i].r : (byte)255, 0, (byte)(255 - rp[i].r));
+                outPx[i] = new Color32(mp != null ? mp[i].r : (byte)0, ap != null ? ap[i].r : (byte)255, 255, (byte)(255 - rp[i].r));   // blue on: detail maps work
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, true, true);
             tex.SetPixels32(outPx);
             tex.Apply();

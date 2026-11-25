@@ -49,6 +49,61 @@ namespace Backrooms.World
                 Quad(negY, Vector3.down, new Vector3(b.x, a.y, a.z), new Vector3(b.x, a.y, b.z), new Vector3(a.x, a.y, b.z), new Vector3(a.x, a.y, a.z), p => new Vector2(-p.x, p.z));
         }
 
+        /// Like AddBox, but every vertical edge where both side faces show is cut at 45° by `bevel` meters (real wall
+        /// corners are never knife-sharp; the cut catches a line of light). Edges where a face is hidden (a wall that
+        /// continues into the next box) stay square, so joins don't get grooves. Top/bottom follow the cut outline.
+        /// `corners` limits which vertical edges may be cut (bits: 1 = +x+z, 2 = +x-z, 4 = -x+z, 8 = -x-z).
+        public void AddBevelledBox(Bounds box, Faces faces, float bevel, int corners, int posX, int negX, int posY, int negY, int posZ, int negZ)
+        {
+            Vector3 a = box.min, b = box.max;
+            bool px = (faces & Faces.PosX) != 0, nx = (faces & Faces.NegX) != 0, pz = (faces & Faces.PosZ) != 0, nz = (faces & Faces.NegZ) != 0;
+            bool cPP = px && pz && (corners & 1) != 0, cPN = px && nz && (corners & 2) != 0;   // which corners get cut
+            bool cNP = nx && pz && (corners & 4) != 0, cNN = nx && nz && (corners & 8) != 0;
+            float c = bevel;
+            if (px) Quad(posX, Vector3.right, new Vector3(b.x, a.y, a.z + (cPN ? c : 0)), new Vector3(b.x, b.y, a.z + (cPN ? c : 0)), new Vector3(b.x, b.y, b.z - (cPP ? c : 0)), new Vector3(b.x, a.y, b.z - (cPP ? c : 0)), p => new Vector2(p.z, p.y));
+            if (nx) Quad(negX, Vector3.left, new Vector3(a.x, a.y, b.z - (cNP ? c : 0)), new Vector3(a.x, b.y, b.z - (cNP ? c : 0)), new Vector3(a.x, b.y, a.z + (cNN ? c : 0)), new Vector3(a.x, a.y, a.z + (cNN ? c : 0)), p => new Vector2(-p.z, p.y));
+            if (pz) Quad(posZ, Vector3.forward, new Vector3(b.x - (cPP ? c : 0), a.y, b.z), new Vector3(b.x - (cPP ? c : 0), b.y, b.z), new Vector3(a.x + (cNP ? c : 0), b.y, b.z), new Vector3(a.x + (cNP ? c : 0), a.y, b.z), p => new Vector2(-p.x, p.y));
+            if (nz) Quad(negZ, Vector3.back, new Vector3(a.x + (cNN ? c : 0), a.y, a.z), new Vector3(a.x + (cNN ? c : 0), b.y, a.z), new Vector3(b.x - (cPN ? c : 0), b.y, a.z), new Vector3(b.x - (cPN ? c : 0), a.y, a.z), p => new Vector2(p.x, p.y));
+            // The cuts take the material of the face they turn away from, wallpaper wrapping round the corner.
+            void Cut(bool on, int sub, Vector3 n, float x0, float z0, float x1, float z1)
+            {
+                if (on) Quad(sub, n.normalized, new Vector3(x0, a.y, z0), new Vector3(x0, b.y, z0), new Vector3(x1, b.y, z1), new Vector3(x1, a.y, z1), p => new Vector2(p.x + p.z, p.y));
+            }
+            Cut(cPP, posX, new Vector3(1, 0, 1), b.x, b.z - c, b.x - c, b.z);
+            Cut(cNP, posZ, new Vector3(-1, 0, 1), a.x + c, b.z, a.x, b.z - c);
+            Cut(cNN, negX, new Vector3(-1, 0, -1), a.x, a.z + c, a.x + c, a.z);
+            Cut(cPN, negZ, new Vector3(1, 0, -1), b.x - c, a.z, b.x, a.z + c);
+            // Top and bottom: the outline, corners cut where the sides are, as a fan from the middle.
+            var outline = new List<Vector2>();
+            void Corner(bool cut, float x, float z, float ax, float az, float bx2, float bz2)
+            {
+                if (cut) { outline.Add(new Vector2(ax, az)); outline.Add(new Vector2(bx2, bz2)); }
+                else outline.Add(new Vector2(x, z));
+            }
+            // Clockwise seen from above (x right, z up the page): (a,a) -> (a,b) -> (b,b) -> (b,a).
+            Corner(cNN, a.x, a.z, a.x + c, a.z, a.x, a.z + c);
+            Corner(cNP, a.x, b.z, a.x, b.z - c, a.x + c, b.z);
+            Corner(cPP, b.x, b.z, b.x - c, b.z, b.x, b.z - c);
+            Corner(cPN, b.x, a.z, b.x, a.z + c, b.x - c, a.z);
+            void Cap(int sub, float y, bool up)
+            {
+                int start = vertices.Count;
+                var n = up ? Vector3.up : Vector3.down;
+                var mid = new Vector3((a.x + b.x) / 2, y, (a.z + b.z) / 2);
+                vertices.Add(mid - origin); normals.Add(n); uvs.Add(new Vector2(mid.x, mid.z));
+                foreach (var o in outline) { vertices.Add(new Vector3(o.x, y, o.y) - origin); normals.Add(n); uvs.Add(o); }
+                var tris = Tris(sub);
+                for (int i = 0; i < outline.Count; i++)
+                {
+                    int i0 = start + 1 + i, i1 = start + 1 + (i + 1) % outline.Count;
+                    tris.Add(start);
+                    if (up) { tris.Add(i0); tris.Add(i1); } else { tris.Add(i1); tris.Add(i0); }
+                }
+            }
+            if ((faces & Faces.PosY) != 0) Cap(posY, b.y, true);
+            if ((faces & Faces.NegY) != 0) Cap(negY, a.y, false);
+        }
+
         /// A sloped strip: top from A to B (centre line), `width` across, solid down to `bottom` (or `thickness`
         /// below the top). Faces: top, both sides, the ends, and the underside when it doesn't reach the ground.
         public void AddSlope(Vector3 a, Vector3 b, float width, float bottom, float thickness, int top, int side)

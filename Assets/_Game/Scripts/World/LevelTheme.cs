@@ -63,6 +63,10 @@ namespace Backrooms.World
         ElectricalStation, // Level 3: generators, transformers, conduits, catwalks
         OfficeCubicles,    // Level 4: cubicles, conference rooms, break rooms, Almond water coolers
         HotelSuites,       // Level 5: 1920s hotel hallways, numbered suites, ballrooms, boiler room
+        GeneratorHall, AssemblyLine, BoilerWorks,   // Level 3's other places (ElectricalStation = its maintenance tunnels)
+        OpenPlan,          // Level 4: open-plan floors with the desks taken out (OfficeCubicles = its office floors)
+        Ballroom,          // Level 5: the Beverly Room (HotelSuites = the Main Hall, BoilerWorks = its boiler room)
+        DarkHalls,         // Level 6: tight, cold, lightless hallways
     }
 
     [Serializable]

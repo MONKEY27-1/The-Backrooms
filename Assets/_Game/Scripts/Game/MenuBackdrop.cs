@@ -230,7 +230,7 @@ namespace Backrooms.Game
         {
             var go = new GameObject(kind + " (menu)");
             go.transform.position = at;
-            CreatureBodies.Build(kind, go.transform, out _);
+            CreatureBodies.Build(kind, go.transform);
             foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
             var look = Eye - at;
             look.y = 0f;

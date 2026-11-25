@@ -558,7 +558,8 @@ namespace Backrooms.UI
                 case 3:
                     Ui.Toggle(list, "Head bob", () => s.headBob, v => Set(() => s.headBob = v));
                     Ui.Slider(list, "Camera effects", 0f, 1f, s.effects, Pct, v => Set(() => s.effects = v));
-                    Ui.Paragraph(list, "Film grain, colour fringing, motion blur and head bob strength.", 22, Ui.Dim);
+                    Ui.Slider(list, "Handheld camera", 0f, 1f, s.handheld, Pct, v => Set(() => s.handheld = v));
+                    Ui.Paragraph(list, "The VHS tape, exposure hunting, colour fringing, motion blur and head bob strength.", 22, Ui.Dim);
                     Ui.Toggle(list, "Reduce flashing", () => s.reduceFlashing, v => Set(() => s.reduceFlashing = v));
                     Ui.Paragraph(list, "Failing lights change slowly instead of strobing; no dropped frames or title glitches.", 22, Ui.Dim);
                     Ui.Toggle(list, "Sound captions", () => s.captions, v => Set(() => s.captions = v));
@@ -593,6 +594,7 @@ namespace Backrooms.UI
             Ui.Cycler(list, "Quality", () => QualityName(s.quality), () => Set(() => s.quality = (s.quality + 1) % 4));
             Ui.Paragraph(list, "Low: no reflections or bounce light. Medium: reflections. High: bounce light (SSGI). "
                 + (GameSettings.RayTracingAvailable ? "Ultra: ray-traced bounce light." : "Ultra: longer shadows (ray tracing isn't available on this system)."), 22, Ui.Dim);
+            Ui.Cycler(list, "Picture", () => s.aspect == 1 ? "4:3 camcorder" : "Fill screen", () => Set(() => s.aspect = 1 - s.aspect));
             Ui.Slider(list, "Field of view", 60f, 100f, s.fov, v => Mathf.RoundToInt(v) + "°", v => Set(() => s.fov = Mathf.Round(v)));
             Ui.Slider(list, "Brightness", -1f, 1f, s.brightness, v => (v >= 0f ? "+" : "") + v.ToString("0.0"), v => Set(() => s.brightness = v));
         }

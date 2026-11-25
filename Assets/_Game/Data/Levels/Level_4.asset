@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
   id: 4
   displayName: "Level 4 \xB7 Abandoned Office"
-  credit: Based on "Level 4 - Abandoned Office", https://backrooms-wiki.wikidot.com/level-4 , original by u/M654zy, community adaptations. Licensed CC BY-SA 3.0. Adapted for this game.
+  credit: Based on "Level 4 - Abandoned Office", https://backrooms-wiki.wikidot.com/level-4 , original by u/M654zy, with later community rewrites. Licensed CC BY-SA 3.0. Adapted for this game.
   generator: 1
   staticLevel: {fileID: 0}
   baseDrift: 0
@@ -31,52 +31,48 @@ MonoBehaviour:
     featureChance: 0.22
     pitChance: 0
     manilaChance: 0
-    deadLights: 0.04
+    deadLights: 0.05
     blackoutChance: 0.02
     redChance: 0
     exitChance: 0.22
-    propDensity: 0.035
+    propDensity: 0.012
     glitchChance: 0.12
     props:
-    - kind: 15
-      weight: 6
-    - kind: 0
-      weight: 4
-    - kind: 1
-      weight: 3
-    - kind: 2
-      weight: 2
-    - kind: 52
-      weight: 1.5
-    - kind: 53
-      weight: 1.5
-    - kind: 49
+    - kind: 3
       weight: 1
     - kind: 4
-      weight: 2
-    - kind: 59
-      weight: 1.5
+      weight: 1
+    - kind: 7
+      weight: 0.6
+    - kind: 15
+      weight: 0.8
     - kind: 16
+      weight: 0.6
+    - kind: 10
+      weight: 1
+    - kind: 11
       weight: 1
     exits:
     - kind: 2
       target: 5
       weight: 3
-    - kind: 1
-      target: 3
-      weight: 1.5
+    - kind: 2
+      target: 6
+      weight: 1.2
     - kind: 3
-      target: 1
-      weight: 0.5
+      target: 3
+      weight: 1
   districts:
     kinds:
     - kind: 24
-      weight: 6
+      weight: 5
+    - kind: 29
+      weight: 2
     - kind: 4
-      weight: 1.5
+      weight: 1
     roomHeight: {x: 2.6, y: 3.2}
     wallHeight: 6.4
-    darkRoomChance: 0.02
+    darkRoomChance: 0.04
     curiosities: 0.4
     pitFieldChance: 0.02
     floodChance: 0.015
@@ -103,7 +99,7 @@ MonoBehaviour:
   lightColor: {r: 0.96, g: 0.98, b: 1, a: 1}
   lightIntensity: 1.4
   lightRange: 7.5
-  ambient: {r: 0.38, g: 0.4, b: 0.42, a: 1}
-  fogColor: {r: 0.65, g: 0.68, b: 0.72, a: 1}
+  ambient: {r: 0.36, g: 0.38, b: 0.4, a: 1}
+  fogColor: {r: 0.62, g: 0.65, b: 0.68, a: 1}
   fogDensity: 0.012
-  humVolume: 0.06
+  humVolume: 0.07

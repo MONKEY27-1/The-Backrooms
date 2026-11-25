@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Backrooms.Creatures;
 using Backrooms.Player;
 using Backrooms.Game;
 using Unity.Collections;
@@ -22,6 +23,12 @@ namespace Backrooms.Net
 
         const byte FlagTorch = 1, FlagRun = 2, FlagCrouch = 4, FlagAlive = 8, FlagDark = 16, FlagSit = 32;
         readonly NetworkVariable<byte> flags = new NetworkVariable<byte>(FlagAlive, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        readonly NetworkVariable<bool> deathPose = new NetworkVariable<bool>();
+        readonly NetworkVariable<byte> deathKind = new NetworkVariable<byte>();
+        readonly NetworkVariable<byte> deathVariant = new NetworkVariable<byte>();
+        readonly NetworkVariable<bool> dying = new NetworkVariable<bool>();
+        readonly NetworkVariable<bool> died = new NetworkVariable<bool>();
+        bool deathPoseHandled;
         readonly NetworkVariable<sbyte> pitch = new NetworkVariable<sbyte>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         readonly NetworkVariable<byte> sanity = new NetworkVariable<byte>(255, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         readonly NetworkVariable<FixedString32Bytes> nick = new NetworkVariable<FixedString32Bytes>(default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -30,6 +37,8 @@ namespace Backrooms.Net
         readonly NetworkVariable<bool> waiting = new NetworkVariable<bool>();
         readonly NetworkVariable<byte> emote = new NetworkVariable<byte>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
         readonly NetworkVariable<float> emoteStarted = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        readonly NetworkVariable<byte> action = new NetworkVariable<byte>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        readonly NetworkVariable<float> actionStarted = new NetworkVariable<float>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
         /// Called by the shared B-key emote wheel on whichever computer owns this player.
         public void PlayEmote(int id)
@@ -69,6 +78,30 @@ namespace Backrooms.Net
             rig.ApplyEmote(id, Mathf.Max(0f, elapsed));
         }
 
+        float NetTime => Coop.Session != null && Coop.Session.Net != null ? (float)Coop.Session.Net.ServerTime.Time : Time.time;
+
+        /// Owners replicate a new action only when it changes (or the same one-shot is deliberately replayed).
+        void SyncAction()
+        {
+            int id = Hands.Current;
+            if (action.Value == id && Mathf.Abs(localActionStamp - Hands.Since) < 0.001f) return;
+            localActionStamp = Hands.Since;
+            action.Value = (byte)id;
+            actionStarted.Value = NetTime;
+        }
+
+        void AnimateRemoteHands()
+        {
+            if (rig == null) return;
+            int id = action.Value;
+            float elapsed = Mathf.Max(0f, NetTime - actionStarted.Value);
+            float duration = Hands.Duration(id);
+            if (duration > 0f && elapsed >= duration) id = Hands.None;
+            float cycle = id == Hands.Vault ? Mathf.Clamp01(elapsed / 0.45f)
+                : id == Hands.Ladder ? transform.position.y / 0.35f : elapsed;
+            rig.ApplyHands(id, elapsed, (flags.Value & FlagTorch) != 0, cycle);
+        }
+
         public void SetSuitServer(int index)
         {
             if (!IsServer) return;
@@ -100,6 +133,7 @@ namespace Backrooms.Net
         AudioClip[] steps;
         Vector3 lastPos;
         float stepPhase, speed, emoteStartTime;
+        float localActionStamp = -1f;
         byte appliedEmote;
         bool mineSetUp, lastLobbyMode;
         AudioSource emoteAudio;
@@ -168,8 +202,12 @@ namespace Backrooms.Net
             suit.OnValueChanged += (_, s) => ApplySuit(s);
             playerKey.OnValueChanged += (_, __) => SetUp();
             waiting.OnValueChanged += (_, __) => SetUp();
+            dying.OnValueChanged += OnDyingChanged;
+            died.OnValueChanged += OnDiedChanged;
             nick.OnValueChanged += (_, __) => UpdateNameTag();
             ApplySuit(suit.Value);
+            deathPose.OnValueChanged += OnDeathPoseChanged;
+            if (deathPose.Value) OnDeathPoseChanged(false, true);
             poseSeed = (OwnerClientId * 0.37f) % 1f;
             CreateNameTag();
             lastPos = transform.position;
@@ -274,6 +312,9 @@ namespace Backrooms.Net
 
         public override void OnNetworkDespawn()
         {
+            deathPose.OnValueChanged -= OnDeathPoseChanged;
+            dying.OnValueChanged -= OnDyingChanged;
+            died.OnValueChanged -= OnDiedChanged;
             if (All.TryGetValue(key, out var a) && a == this) All.Remove(key);
             if (Mine == this) Mine = null;
             if (Agent != null) Destroy(Agent);
@@ -344,7 +385,16 @@ namespace Backrooms.Net
             if (pitch.Value != p) pitch.Value = p;
             byte s = (byte)Mathf.RoundToInt(Mathf.Clamp01(me.Sanity) * 255f);
             if (Mathf.Abs(sanity.Value - s) > 6) sanity.Value = s;
-            if (rig != null) rig.Animate(me.Velocity.magnitude, me.Crouching, me.Running, -p, Time.deltaTime, me.Sitting);
+            SyncAction();
+            if (rig != null)
+            {
+                rig.Animate(me.Velocity.magnitude, me.Crouching, me.Running, -p, Time.deltaTime, me.Sitting);
+                float elapsed = Mathf.Max(0f, Time.time - Hands.Since);
+                float cycle = Hands.Current == Hands.Vault && me.Body != null ? me.Body.VaultProgress
+                    : Hands.Current == Hands.Ladder ? me.Position.y / 0.35f : elapsed;
+                rig.ApplyHands(Hands.Current, elapsed, me.FlashlightOn, cycle);
+                AnimateEmote();
+            }
         }
 
         void LobbyPose()
@@ -366,6 +416,62 @@ namespace Backrooms.Net
             if (Agent != null) Agent.Alive = false; // no creature interactions in lobby
         }
 
+        /// Host announces that the owner is being executed; every client animates the same killer-driven pose.
+        public void PlayDeathPose(DeathAttack attack)
+        {
+            if (!IsServer) return;
+            deathKind.Value = (byte)attack.Kind;
+            deathVariant.Value = (byte)(attack.Variant & 1);
+            deathPose.Value = true;
+            dying.Value = true;
+            died.Value = false;
+            deathPoseHandled = false;
+            // This explicit call matters when the boolean NetworkVariable was already true on a previous death.
+            OnDeathPoseChanged(false, true);
+        }
+
+        void OnDyingChanged(bool oldValue, bool newValue)
+        {
+            if (Agent != null) Agent.Alive = !newValue && !died.Value && Alive;
+        }
+
+        void OnDiedChanged(bool oldValue, bool newValue)
+        {
+            if (Agent != null) Agent.Alive = !newValue && !dying.Value && Alive;
+        }
+
+        public void SetDiedServer(bool value)
+        {
+            if (!IsServer) return;
+            died.Value = value;
+            dying.Value = false;
+            deathPose.Value = false;   // completed/revived death: re-arm the event for next time
+            if (!value)
+            {
+                if (!IsMine && rig != null) rig.Animate(0f, false, false, 0f, Time.deltaTime, false);
+            }
+            if (value && !IsMine) foreach (var r in renderers) if (r != null) r.enabled = false;
+        }
+
+        void OnDeathPoseChanged(bool oldValue, bool newValue)
+        {
+            if (!newValue) { deathPoseHandled = false; return; }
+            if (deathPoseHandled) return;
+            deathPoseHandled = true;
+            int variant = deathVariant.Value;
+            var kind = (CreatureKind)deathKind.Value;
+            if (IsMine)
+            {
+                if (!IsServer)
+                {
+                    var me = Players.Local;
+                    if (me != null && me.IsLocal) me.PlayRemoteDeathPose(kind, variant, transform.position, transform.eulerAngles.y);
+                }
+                return;
+            }
+            rig?.KillPose(kind, 1f);
+        }
+
         /// Someone else's: their body, flashlight and footsteps, and the PlayerAgent creatures look at.
         void Show()
         {
@@ -378,9 +484,10 @@ namespace Backrooms.Net
             byte f = flags.Value;
             bool away = waiting.Value;
             bool shown = (f & FlagAlive) != 0 || away;   // a waiting body stays visible
+            bool isDying = dying.Value || died.Value;
             if (Agent != null)
             {
-                Agent.Alive = Alive;   // creatures leave a waiting body alone
+                Agent.Alive = Alive && !isDying;   // creatures leave a waiting or fallen body alone
                 Agent.FlashlightOn = (f & FlagTorch) != 0 && !away;
                 Agent.Running = (f & FlagRun) != 0 && !away;
                 Agent.Crouching = (f & FlagCrouch) != 0;
@@ -388,15 +495,17 @@ namespace Backrooms.Net
                 Agent.Sanity = sanity.Value / 255f;
                 Agent.Velocity = delta / dt;
             }
-            foreach (var r in renderers) if (r != null) r.enabled = shown;
-            if (body != null) body.enabled = shown;
+            foreach (var r in renderers) if (r != null) r.enabled = shown || dying.Value;
+            if (body != null) body.enabled = shown || dying.Value;
             if (head != null) head.localRotation = Quaternion.Euler(away ? 25f : pitch.Value, 0f, 0f);
             if (torchLight != null) torchLight.enabled = shown && !away && (f & FlagTorch) != 0;
-            if (rig != null) rig.Animate(away ? 0f : speed, (f & FlagCrouch) != 0, (f & FlagRun) != 0, away ? -25f : -pitch.Value, dt, (f & FlagSit) != 0);
-            if (!away) AnimateEmote();
+            if (rig != null && !isDying) rig.Animate(away ? 0f : speed, (f & FlagCrouch) != 0, (f & FlagRun) != 0, away ? -25f : -pitch.Value, dt, (f & FlagSit) != 0);
+            if (!isDying) AnimateRemoteHands();
+            if (!away && !isDying) AnimateEmote();
+            if (isDying && !IsMine && rig != null && !died.Value) rig.KillPose((CreatureKind)deathKind.Value, 1f);
 
             // Footsteps: one per half stride.
-            if (!shown || away || feet == null || steps == null || steps.Length == 0) return;
+            if (!shown || away || isDying || feet == null || steps == null || steps.Length == 0) return;
             float stride = (f & FlagRun) != 0 ? 1.3f : 0.9f;
             stepPhase += speed * dt / stride;
             if (stepPhase >= 1f && speed > 0.4f)

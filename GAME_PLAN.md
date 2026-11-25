@@ -29,17 +29,17 @@ remembers what it is copying.
 | Levels | Mostly procedural; some hand-built (wiki "anchor" levels) |
 | Layout | Never changes while you're in a level |
 | Goal | Each level has a real exit somewhere |
-| Lore | None (no notes or tapes) |
+| Lore | None outside Story mode (Story: see §23) |
 | Player | Unnamed character, first person |
 | Monsters | A pool of creatures; they react, stalk, then chase; they appear rarely |
 | Player vs monster | Hide and run only |
-| Death | Restart from the last checkpoint |
+| Death | Restart from the last checkpoint (Story mode: copies, see §23) |
 | Survival | Stamina, sanity and thirst; almond water restores |
 | Tools | Flashlight, camcorder (raised as a tool), almond water |
 | Inventory | "Look into the bag": the backpack swings around, you grab 3D items, the game doesn't pause |
 | Puzzles | Simple |
 | No-clipping | Exists but very rare |
-| Audio | Very important; ambient drones; no voice acting |
+| Audio | Very important; ambient drones; no voice acting (Story mode: subtitles now, voices later) |
 | Mode | Single-player, plus online co-op for 2–4 players (planned, see §19) |
 | Saves | Autosave at checkpoints |
 | Settings | Sensitivity, FOV, graphics quality, audio sliders, key rebinding |
@@ -422,6 +422,20 @@ Level 0 and its variants use the **district generator** (`DistrictLayout.cs` + `
 
 ## 20. Expansion Levels (Levels 3–9)
 
+**Full rework started 2026-11-21** (user's answers, memory `levels-3-9-rework-decisions`): wiki canon, one level at a time with a playtest between, Blender hero kit per level. Level 7 will get surface swimming, diving with a breath meter, and the wiki's depth zones.
+
+### Level 3 · Electrical Station (rebuilt 2026-11-21, `Level3Layout.cs`, `Level3Runtime.cs`, `PropsLevel3.cs`)
+- **District kinds:** `ElectricalStation` = brick maintenance tunnels (a winding spanning tree, so no forced doorways), `GeneratorHall` (7.6 m, rows of diesel generators under cable trays, transformers in barred pens, columns; Level 3's giant halls become these), `AssemblyLine` (5.2 m, conveyor lines with crossings every 16 m, benches, shelves, the most supplies), `BoilerWorks` (concrete tunnels and boiler rooms, sludge).
+- **Squeezes:** straight tunnel stretches of 3+ cells become 1.5 m tall, 0.9 m wide brick crawls (crouch only; checked with the player's capsule).
+- **Sanctum** (about 1 in 4.5 maintenance districts): plaster cathedral 7.8 m tall with columns, pews, warm glow, and the angel statue on a plinth. Its only way in is its own squeeze. Entering ends a hunt and drives off creatures nearby. Inside, sanity recovers and it becomes your checkpoint (`SaveData.shrine*`, respawn there in that level only).
+- **Black sludge:** pools under leaking sludge pipes and in boiler rooms. Standing in one halves your speed and drains stamina and sanity. A pipe near you bursts every 70-150 s.
+- **Hotspots:** some dead ends play crying and drain sanity, with a chalk warning on the wall.
+- **Bars with no gate:** cage rooms in the halls with a single opening get iron bars; you can see the stash inside.
+- **Goal = restore power:** find 3 fuses for the breaker panel beside the marked lift door to Level 4. Done = every bar gate in the level lifts (`Level3Power`, saved as `3:done`).
+- **Lights:** bare caged bulbs (long pendants in halls, short cords in tunnels), many dead or flickering; no ceiling panels.
+- **Models:** `Art/Level3Props.blend` → `Resources/Models/L3*.fbx` (generator, transformer, conveyor and motor, breaker panel, bar gate, sludge pipe, plinth). The angel is a CC BY 4.0 Sketchfab scan (see CREDITS.md), textures in `Resources/Textures/L3Angel`.
+
+
 Reworked 2026-11-20 to completely replace generic district reuse with bespoke architectural generators and custom district blueprints true to the Backrooms Wiki:
 
 ### Dedicated Bespoke Generators
@@ -445,9 +459,6 @@ Reworked 2026-11-20 to completely replace generic district reuse with bespoke ar
   - Chunk (0,0) arrival manhole from Level 8; chunk (2,1) contains an anomalous open front door leading out to Level 0 / 11.
 
 ### Bespoke District Architectures (`DistrictExpansion.cs`)
-- **Level 3 · Electrical Station (`DistrictKind.ElectricalStation`)**:
-  - 4.8m tall industrial hall with central runway and transformer bays.
-  - Giant generator blocks, transformer units, ceiling conduit runs, hanging cable bundles, and high-voltage maintenance rooms.
 - **Level 4 · Abandoned Office (`DistrictKind.OfficeCubicles`)**:
   - 2.8m corporate suites divided into 2x2 cubicle pods with low partition walls, desks, office chairs, and filing cabinets.
   - Central **Water Cooler Oasis** stocked with Almond Water clusters.
@@ -457,15 +468,125 @@ Reworked 2026-11-20 to completely replace generic district reuse with bespoke ar
   - Grand chandelier ballroom lounges with 5.2m ceilings, velvet sofas, armchairs, coffee tables, and warm vintage lighting.
   - 1 in 3 hotel districts forms a dark subterranean **Boiler Room** with rumbling iron boilers, steam pipes, and the iron descent hatch to Level 6.
 
+### Level 4 · Abandoned Office (rebuilt 2026-11-21, `Level4Layout.cs`, `Level4Runtime.cs`, `PropsLevel4.cs`)
+- **Kinds:** `OfficeCubicles` = office floors (shared BSP offices builder), `OpenPlan` (columns, rows of carpet dents, a few offices, rarely one cubicle row still standing), `Corridors`.
+- **Empty with traces:** `Furnish` in Level 4 places carpet dents, cut floor boxes and the odd lone chair instead of furniture. One cubicle floor in eight was never cleared.
+- **Windows:** mostly blacked out (plain, blinds, or paper taped over). About 5% are lure windows: a sunny street drawn in code, daylight spill and birdsong. Staring for 6 s or touching the glass sends you to Level 0, 1, 2 or 3.
+- **Almond water:** water coolers, vending machines and fountains are drink spots (`WaterSpot`, E to drink: thirst full).
+- **Abandoned sites** (25% of districts): M.E.G. Base Omega (bedrolls, crates, supplies, log), the Amor Incrementum mold farm (trays on shelves, one light), the hoarders' room.
+- **Goal:** 2 keycards; the badge reader by the stairwell door to Level 5 turns from red to green.
+- **Models:** `Art/Level4Props.blend` → `L4Window`, `L4WindowBlinds`, `L4WaterCooler`, `L4VendingMachine` (hollow), `L4Fountain`.
+- **Vanishing exits:** each exit door is its own object; once you've seen it and lost sight of it, there's a 35% chance it's plain wall when you look back (stays gone until you leave the level; off in co-op).
+- **Calm:** FearDirector builds tension at 30% speed in Level 4, skips three of four spawn rolls, and never spawns Partygoers or Skin-Stealers there.
+- Abandoned sites pick a room of about 80 m²; the hoard is piled in clusters. Wall writing sits at eye height (1.45 m), in Level 3 too.
+
+### Level 5 · The Hotel (rebuilt 2026-11-21, `Level5Layout.cs`, `Level5Runtime.cs`, `PropsLevel5.cs`)
+- **Main Hall** (`HotelSuites`): corridors on a world grid (every 7 cells along z, 14 along x) plus a ring at each district edge, so district seams meet corridor to corridor. Bands of furnished guest rooms between them (bed, nightstands, lamp, armchair, rug, sometimes a gramophone), one door each. Gold trellis on red damask, chair rails, red carpet, candle sconces.
+- **Living doors:** mahogany leaves with brass room numbers that follow no pattern. Interact opens or closes them; out of sight they sometimes swing on their own (off in co-op).
+- **Elevators** (copper cages, rare): a 15-button panel (1-12, 13, 40, 382). Floors 1-12 = another part of the hotel (a level-5 exit fired from a per-floor position); 13+ = lights out, back to checkpoint.
+- **The Beverly Room** (`Ballroom`, also Level 5's giant halls): wood floor, columns, chandeliers, banquet tables, the unfinished Mahjong table, jazz. Doors line its walls; which ones exist changes each time you leave (`BallroomDoor.Visit`), and each leads somewhere else in the hotel.
+- **Boiler Room** (`BoilerWorks`, shared with Level 3): brick, boilers, leaking almond water instead of sludge, heat zones (thirst drains fast). Half the boiler districts hold the stairs down to Level 6.
+- **Turntables:** jazz from gramophones in empty rooms stops when you walk in and restarts later; the ballroom's never stops.
+- **Goal:** find the key to your room (brass tag with your number, `DistrictLayout.GoalRoomNumber`, which no other door shows). Then find that room; it leads to Level 6. The HUD gives its direction.
+- **Shared:** `IInteractable` (doors and buttons), Brass and Mahogany paints, the gold-trellis wallpaper (pattern 6). Door openings now sit proud of the wall, so chair rails no longer show across exits.
+- **Models:** `Art/Level5Props.blend` → `L5Chandelier`, `L5CageElevator`, `L5DoorLeaf`, `L5Sconce`, `L5Gramophone`, `L5MahjongTable`, `L5Bed`.
+- **Dev panel:** the level cycler now runs in level order (-1, 0, 0.2, 0.3, 1-9, 19, 37, 188, the endless staircase, Fun).
+
+### Level 6 · Lights Out (rebuilt 2026-11-21, `Level6Layout.cs`, `Level6Runtime.cs`)
+- **DarkHalls:** a spanning-tree maze of 2 m corridors of smooth concrete (long and straight), no light fixtures at all, near-black ambient and fog. Level 6's giant halls are dark halls too.
+- **Smothered flashlight:** about 2.4 m of dim, flickering light, fading to 1.6 m over 10 minutes in the level. Sanity wears down over about 6 minutes of darkness.
+- **Follow the waves:** every staircase to Level 7 plays 3D surf audible from about 48 m (exit chance raised to 0.4). The goal line says to listen for the waves.
+- **Chalk (G / D-pad down, rebindable):** draws a faintly glowing arrow the way you were walking (a cross if you were standing still). Up to 80 marks; cleared when you leave the level.
+- **Seal behind you:** every 35-70 s, a corridor cell 6-16 steps back on your trail, out of sight and at least 10 m away, becomes a wall. A flood fill (above head height) must still reach 12 cells away, or the wall is removed. Off in co-op.
+- **Mimics:** now and then your footsteps are copied from 12-18 m ahead and stop when you stop; flashlight clicks get answered.
+- **The Quietest Room** (about 1 in 8 districts): a 3x3 dead end with a chair facing a light switch. A whisper begs you not to touch it. Flipping it gives a blinding flash, a scream, -0.5 sanity and a forced hunt (`FearDirector.ForceHunt`).
+
+### Level 7 · Thalassophobia (rebuilt 2026-11-22, `OceanLayout.cs`, `Level7Runtime.cs`, `PropsLevel7.cs`)
+- **Ocean:** water at y = 4, a concrete sky at 28, the sea floor on a depth field (45-195 m) built from 4 m columns. Zones: Daylight 0-30 m, Twilight 30-80 (bones), Midnight 80-150 (more bones), Abyss below (tar mounds). Fog darkens and closes in with depth (`Atmosphere.SetOceanDepth`; at least 6 m of visibility), and the fill light dies by ~65 m. The open sea uses the deep-water surface.
+- **Arrival:** always the sideways room at chunk 0,0 (also after drowning). Carpet up one wall with the bookcase, table, chair and lamp fixed to it, ceiling tiles on the opposite wall, wallpaper underfoot, and the door is a hole in the floor 4.5 m above the water, with the leaf hanging open. No way back up. A note gives the hints.
+- **Diving:** Level 7 has dive control. Sprint speeds diving (x1.7) and surfacing; idle, you drift back up. `FirstPersonController.BreathRate`: x0.5 with the diving gear, plus pressure below 80 m (x1 + (depth-80)/50); the deep also drains sanity. Zone captions as you go down.
+- **Fort Surrender** (90-140 m out): an island of planks, tar and barricaded furniture with a landing. Its diving helmet and tank (`DivingGear`, E) are saved as `7:gear`. A note with its rules.
+- **Concrete pillars** every ~96 m from the deep to the sky, each with a ledge, steps and a light at the waterline: places to rest.
+- **Sunken rooms** on the bottom where it is under 120 m deep.
+- **Goal:** the cave in the drowned mountain (230-300 m out), mouth 88 m down, marked by a green beacon and light. The tunnel leads to Level 8. The HUD gives direction, distance, your depth and the waypoint.
+- **Ring of pillars** about 150 m west: ten stone pillars and pipes round a platform 40 m down with a wooden trapdoor (Level 9), and bones.
+- The Thing and Tiny are left to the monster rework.
+
+### Level 7 detail pass and Level 8 rebuild (2026-11-23)
+
+**Ocean detail.** The sea floor is one smooth rock mesh per chunk (`RockMesh.SurfaceNets` over a density field, 1 m samples) with ridges, overhangs and boulders; the cave tunnel is cut from the same field. Kelp to 85 m, dead coral to 120 m, sunken furniture and rowing boats (`L7Boat`, `Art/Level7Props.blend`) in the shallows, a 26 m skeleton in the Midnight zone (`OceanLayout.WhaleAt`), boiling tar in the Abyss. Fish schools scatter from your light, silt and bubbles drift round the camera, and the surface is a rolling black sea that swimmers ride (`OceanLife.cs`).
+
+**Level 8 "Cave Systems"** (`CaveLayout.cs`, `Level8Runtime.cs`). One chamber per chunk at its own height, joined by tunnels that climb, dip and cross; carved as a density field. The **9th Road** is a chain of 14 chambers: 13 M.E.G. posts, then a shaft down to Level 9 (the goal). Reaching a post is a checkpoint. Off the road: flood pits (climb in for supplies, float out), boiling tar with hands, crawls that come out at an earlier marker, glowing fungus, old camps. Organ cavern (post 4) and Handyland (post 7) are on the road. Batteries drain 2x and the lamp reaches 15 m. Self-check: `CaveLayout.CheckRoad` over 12 seeds.
+
+### Level 9 "The Suburbs" rebuilt (2026-11-23)
+
+`SuburbsLayout.cs`, `Level9Runtime.cs`, `PropsLevel9.cs`, models in `Art/Level9Props.blend`. Streets every third chunk both ways; two two-storey houses per lot chunk (varied plan size, mirror, siding, roof; about 3 in 4 open, furnished, no power), back yards, hedges, fences. Wrong houses: identical neighbours, and now and then a second house clipped through one. Wet streets: fog banks, static, intrusive thoughts (sanity). Lamps mostly dead.
+
+**Goal:** follow the power line (hums; arrow signs at crossroads) about 600 m to a house built in the middle of a crossroads, the only one with lights: its door is Level 0 until Level 10 exists. **Searchlights** (ours, no body): two beams work the streets; three seconds in one and it calls everything nearby and burns. Roofs, porches, hedges, cars, walls block it. Playground with crawlable tubes near the line; the airport's edge to the east, the fenced grass fields to the west (Level 10, later).
+
+**Story-ready (STORY_PLAN 8i):** three houses by the line, each with its dressing (key rack; papers on the walls; porch light, knot, tape machine). `SuburbsLayout.StorySpot(seed, 0..2)` is where each document or tape goes. No story text or code yet. Self-check: `CheckLine` over 40 seeds.
+
 | Level | Name | Generator | Key Architecture | Progression Links |
 |---|---|---|---|---|
-| **Level 3** | Electrical Station | Districts (`ElectricalStation`) | Transformer bays, generator blocks, conduit runs, heavy hum | In: Level 2 door. Out: Door to Level 4, Door to Level 2, Elevator to Level 5 |
+| **Level 3** | Electrical Station | Districts (`ElectricalStation`, `GeneratorHall`, `AssemblyLine`, `BoilerWorks`) | Brick tunnels and squeezes, generator halls, assembly lines, sludge, Sanctums, barred rooms | In: Level 2 door. Out: Door to Level 4 (also the power goal's lift), Door to Level 2, Elevator to Level 5 |
 | **Level 4** | Abandoned Office | Districts (`OfficeCubicles`) | Modular cubicle pods, conference suites, Almond Water coolers | In: Level 3 door. Out: Stairs to Level 5, Door to Level 3, Elevator to Level 1 |
 | **Level 5** | The Hotel (Terror Hotel) | Districts (`HotelSuites`) | 1920s hotel halls, ballrooms, chandeliers, industrial boiler room | In: Level 4 stairs, Level 3 elevator. Out: Boiler room door to Level 6, Elevator to Level 4, Stairs to Level 3 |
 | **Level 6** | Lights Out | Districts (`Corridors`) | Soundproof dark concrete, complete light absorption, smothered torch | In: Level 5 boiler room door. Out: Submerged stairs down to Level 7, Stairs to Level 5 |
-| **Level 7** | Thalassophobia | Ocean (`OceanLayout`) | Entrance bunker, vast dark ocean, seabed ruins, underwater trench | In: Level 6 stairs. Out: Deep underwater cavern hatch to Level 8, Stairs up to Level 6 |
+| **Level 7** | Thalassophobia | Ocean (`OceanLayout`) | Sideways room in the ceiling, ~200 m sea in four depth zones, Fort Surrender, pillars, sunken rooms | In: Level 6 stairs. Out: the cave on the drowned mountain (Level 8), the ring's trapdoor (Level 9) |
 | **Level 8** | Cave System | Caves (`CaveLayout`) | Organic karst caverns, limestone stalactites, puddles, floor sinkhole | In: Level 7 underwater hatch. Out: Pitfall drop to Level 9, Crawlway to Level 7 |
 | **Level 9** | Darkened Suburbs | Suburbs (`SuburbsLayout`) | Asphalt road grid, sodium streetlights, 3D houses, lawns, driveways | In: Level 8 floor drop. Out: Open house front door to Level 0 / 11, Storm drain hatch to Level 8 |
+
+## 21. Graphics revamp (planned 2026-11-22)
+
+**Direction (user's answers):** the whole game *is* camcorder footage: physically real light and materials seen through a convincing 90s camcorder signal (our own build, not a copy of Kane Pixels or the A24 film). Looks come first: 30+ fps on the RTX 3050 is fine and ray-traced GI is allowed. A new Blender modular kit plus new materials. A global pass across all levels (not Level 0 first).
+
+**Why it looks like a game today:** flat fill light from an invisible gradient sky (`Atmosphere.cs`); only 6 shadowed and 6 area lights in the 64-light pool (`LightRig.cs`); knife-sharp box geometry (baseboards are stripes, the ceiling grid is a texture, troffers are flat quads); surfaces too clean and too even; a neutral camera with no character.
+
+### Stage A · Camera and signal (every frame)
+- Custom HDRP post-process `VhsSignal` (registered in HDRP Global Settings, after post): YIQ split, luma at ~330 lines and chroma at ~40 lines with horizontal bleed, tape noise separate from grain, muddy blacks, highlight halo/ringing, a faint head-switch band, field jitter at a fixed 59.94 Hz (not tied to frame rate). Default **authentic but readable**; the existing effects slider scales it.
+- Aspect ratio setting: 16:9 (default) or 4:3 pillarboxed.
+- **Exposure and white-balance hunting:** lagging, overshooting auto exposure and colour temperature when the light changes (`Exposure` + `WhiteBalance` driven from a measured scene brightness).
+- **Tape reacts to danger:** tracking errors, dropouts and noise driven by monster distance, low sanity, copy drift and level changes (one `SignalDamage` 0-1 value that other systems push into).
+- **Handheld body motion:** sway, breathing and footstep bob on the camera, with a comfort slider.
+- The HUD becomes the viewfinder (REC, timestamp, battery). Raising the camcorder tool switches to zoom and night vision.
+- Because the signal is ~330 lines, the 3D view can render below native resolution (STP upscaling) without the loss showing. That frees GPU time for Stage B.
+
+**Stage A status (built and tested in Play 2026-11-22):** code in `Scripts/Look/` (`VhsSignal` after post, `SignalMeter` before post, both registered in HDRP Global Settings; `Camcorder` boots itself once per run, DontDestroyOnLoad, volume priority 3) and `Resources/Shaders/VhsSignal.shader`. Exposure is now **Fixed**, driven by the Camcorder from the meter's centre-weighted log average (AsyncGPUReadback, ~30x17 px; spring with a 0.3-stop dead zone, so it overshoots and settles); white balance takes out only 10% of the light's cast (temperature ±15, tint ±10). Danger alone caps damage at 0.75 (tracking band, wobble, dropouts); only `Camcorder.Hit` (level changes) reaches the snow. HDRP film grain is off (the tape has its own noise). Settings: Graphics > Picture (Fill / 4:3), Comfort > Handheld camera. HUD lives in a frame that follows 4:3; the REC/date viewfinder is always on; raising the camcorder shows NIGHTSHOT. Not done: STP upscaling (left for Stage B when GI cost is known); 4:3 renders the full width then crops.
+
+### Stage B · Real light
+- Replace the gradient-sky fill with real bounce light: SSGI on by default, mixed ray-traced GI on High/Ultra; the sky ambient drops to a small floor value.
+- Troffers near the player become real rectangle area lights with more shadow casters (looks-first budget); distant panels stay emissive. Physical light units throughout and a camcorder-style tonemap (hard highlight clip, lifted blacks) via a custom curve or LUT.
+- Retune SSAO, contact shadows and volumetric fog; per-level fixture colours and flicker.
+
+**Stage B status (first pass, tested in Play 2026-11-22):** tape sharpened after the user found it too blurry (576 tape lines, narrower luma/chroma blur). `LightRig` now has a separate pool of 28 panel-sized rectangle lights plus 64 points; per quality the nearest 4/10/20/28 panels get area lights and 3/6/10/14 of them cast soft shadows. `Atmosphere` keeps only 30% of the old sky fill when bounce light is on (High SSGI, Ultra RTGI; 75% without) and its fog is half as dense (the old haze washed halls out on camera). The Camcorder volume adds a video tone curve (Custom: toe 0.3/0.4, shoulder 0.7/2.5, angle 0.1), lighter bloom (0.12, threshold 1) and auto-exposure mid grey 0.25. STP upscaling is on (HDRP asset dynamic resolution, software): render scale 60/70/75/67% for Low..Ultra but never under ~720 lines; Ultra went from ~24-34 to ~35-48 fps in the Editor's small Game view. Not done yet: SSAO/contact-shadow retune, per-level fixture colours, testing levels other than 0, and a full-screen 1080p performance check.
+
+### Stage C · Blender modular kit (`Art/RevampKit.blend` -> `Resources/Models/Kit`)
+- Wall ends and corners with bevels, real T-bar ceiling grid and tiles (some sagging, stained or missing), recessed 2x4 troffers with diffusers, baseboards with a profile, door casings, outlets and vents. Shared by every level; per-level hero kits stay as they are.
+- Code keeps the layout; ChunkStreamer swaps box faces for kit pieces.
+
+**Stage B finished (2026-11-22):** SSAO stronger (intensity 1.7, radius 1.6, 25% on direct light; Low 1.0/1.0/0) and contact shadows 0.4 m, in `GameSettings.ApplyVolume`. Checked Levels 0, 1, 2 and 5 under the new light. Still open: per-level light colours (kept as they were) and a full-screen 1080p perf check.
+
+**Stage C status (built and tested 2026-11-22):** `World/KitDressing.cs`, hooked into `ChunkStreamer.Build`, so it applies to every level:
+- Wall corners: `BoxMeshBuilder.AddBevelledBox` cuts a 2 cm 45° bevel on tall solid boxes (≥1.2 m high, ≥8 cm thick) wherever both faces show and no other solid box touches that edge (`FreeCorners`; without it Level 1 showed dark grooves between abutting wall boxes). Cost ~1.5-4 ms per chunk build in the Editor.
+- Baseboards and chair rails: any non-solid strip 6-20 cm high and ≤3 cm deep becomes the Blender skirting profile (`KitBaseboard`, bullnose top, floor bead), in ~1 m pieces using the trim's own material.
+- Tile ceilings (materials named `Ceiling*`, the Level 0 family; the texture's 6x6 grid repeats every 3 m so lines sit on every 0.5 m): real T-bar rails (24 x 12 mm, in the ceiling material so they take the grid line's colour) stop at light panels; sprinklers on a 3 m grid with 8% smoke detectors; 0.6% sagging tiles (`KitSagTile`, UVs inside one tile); 0.3% missing tiles (Void quad).
+- Models: `Art/build_revampkit.py` (run with `blender -b --factory-startup --python Art/build_revampkit.py`) saves `Art/RevampKit.blend` and exports `KitBaseboard`, `KitSprinkler`, `KitSmokeDetector`, `KitSagTile` to Resources/Models (export needs `bake_space_transform=True` so meshes arrive Y-up like the older models).
+- Not done: door casing profiles, corner guards, other levels' ceiling types (only acoustic tiles get rails), a fallen-tile prop under missing tiles.
+
+### Stage D · Materials and grime
+- New CC0 material sets (ambientCG / Poly Haven) with macro colour variation and roughness variation so the tiling stops showing.
+- Pooled HDRP decals per chunk: stains, scuffs, carpet wear paths, water damage, mould in corners, dust under fixtures.
+
+**Stage D status (2026-11-22, first pass; Level 0 only):** `World/GrimeDressing.cs` builds one merged HDRP/Decal mesh per chunk (stains, wall-foot dirt, mould, leaks; atlas and `Resources/GrimeDecal.mat` from `EditorTools/GrimeMaterials.cs`, menu Backrooms > Build Grime Materials / Check Grime; GameSceneSetup calls Build). 24 materials got the `MacroVariation` detail map on a 9.7 m tile; their masks' blue channel was 0, which switches HDRP detail maps off, so it is now 255. First density (~8,000 decals) cost frames (about 54/43 fps on vs 60/69 off, noisy Editor samples), so it was cut to about a third: compiled, self-check passes, ~67 decals per chunk; menu-backdrop samples on 45.5/48.8/51.8 vs off 37.3/51.3/39.4 fps, so any cost is below the Editor noise (v-sync on, small window; 1080p unmeasured). Creatures read as silhouettes when backlit: moving objects get little bounced light (Stage E). No new CC0 photo sets were added.
+
+**Correction to Stage B:** STP was not running (software, unforced scaling fell back to blurry Catmull-Rom). The HDRP asset now forces 75% for every quality level, the Camcorder scaler is gone, and HDRP's cameraCanRenderSTP reads true on D3D12. The old fps figures were Catmull-Rom.
+
+### Stage E · Per-level tuning
+- Each level gets a before/after screenshot pass for light colour, fog, materials and signal strength.
+
+**Stage E status (2026-11-23, first pass):** all levels but 11 visited, EV logged (Screenshots/E0_* before, E1_* after). Two global fixes: camcorder exposure range EV 3.4-10 (was 1-13, which brightened Levels 2, 3, 6, 8, 9, 19 by up to 2.4 stops), and 65% sky fill with bounce light (was 30%, creatures' faces went black; compare E_fill_0.3/0.6/1). No per-level values changed. E1 shots after Level 9 are skewed by low sanity (hide sanity effects next time). Open: Level 9 still reads as moonlit grey (rework pending anyway), Level 3's lit halls clip, a fair creature re-shoot, 1080p.
+
+**Risks:** Unity 6 RTGI users report a weak denoiser and black-output bugs (test before relying on it); the HDRP limit of 64 area lights on screen; Stage C touches ChunkStreamer's mesh building on every level.
 
 ## Sources
 
@@ -475,3 +596,100 @@ Reworked 2026-11-20 to completely replace generic district reuse with bespoke ar
 - [PC Gamer: 150+ Backrooms games on Steam](https://pcgamer.com/gaming-industry/steam-week-in-review-4-backrooms-games-released-on-steam-last-week-joining-a-list-of-over-500-cash-ins-parodies-and-legitimate-contenders)
 - [Roblox devforum: Backrooms generation determinism](https://devforum.roblox.com/t/world-generation-help/4662503) · [WFC in Unity (gamedev.net)](https://gamedev.net/blogs/entry/2275361-wave-function-collapse-for-procedural-generation-in-unity/)
 - [LLM for Unity](https://dev.co/ai/frameworks/llmunity): considered for in-game AI text and rejected for now (2–5 GB, slow, Steam live-AI rules)
+
+## 22. Monster rework (started 2026-11-21)
+
+**Decisions (user's answers):** core 8 (Smiler, Hound, Faceling, Skin-Stealer, Clump, Deathmoth swarm, Wretch, Partygoer) plus level bosses (The Thing on Level 7, Window entities on 188, Jerry's room on Level 2, Dullers through walls on 1/4). A health system (zero = checkpoint; Smilers and Partygoers catch in one hit). Grounded, grotesque Blender models of our own, rigged and posed in code; the older creature FBX files are not used. One monster at a time, playtested before the next. Wiki canon has no entities on Levels 6, 19, 37, 0.2, 0.3.
+
+**Code shape:** `Creature` is the shared base (spawn, senses, movement, state timing); each reworked kind gets its own brain. `LegacyCreature` keeps the old Faceling/Skin-Stealer/Partygoer logic until each is redone.
+
+### Smiler (done 2026-11-22: `Smiler.cs`, `SmilerLook.cs`, `Lure.cs`, `Thrown.cs`, model `Resources/Monsters/Smiler.fbx` from `Art/build_smiler.py`)
+- **Look:** only the grin (needle teeth) and eyes show. The starved, bent-limbed body flashes into view for ~0.12 s when your flashlight beam lands on its face, or when you take a photo (P). Lurkers have half-closed eyes and a dim grin; a staring one cocks its head; a charging one drops forward with the jaw open. The model is scaled to fit under the ceiling where it appears.
+- **Canon rules:** hold its gaze and back away and it sinks back into the dark (Stare -> Leave when you get 17 m away, lose sight 3 s, or after 25 s). It charges if you run within 18 m, come within 2.5 m, shine your light in its face, make a loud noise, or turn your back within 9 m for 1 s while it stares. Chase 4.6 m/s (sprint is 4.8). Caught = checkpoint. Light drives it off.
+- **Where:** blackout hunts as before, plus lurkers in the dark (chance per director roll: Levels 2/3 0.45, 9 0.4, 8 0.25, 1 0.18, 0 0.05, none elsewhere). On lit levels the lights die around a lurker's spot (a 7.5 m "dark pocket": lenses go grey, lights and hum stop) and come back when it leaves; synced to co-op guests.
+- **Throwables:** glowsticks (Q / RB, pickups give 2; a green light for 75 s that draws any Smiler within 20 m, or 9 m mid-charge) and the Smiler Exterminator (X / LB, wiki Object 3; breaks on impact, any Smiler within 4.5 m flees and no Smilers come for ~5 min). They replace about 30% / 6% of battery pickups; saved; mirrored in co-op (the owner's copy acts).
+- **Not done / untested:** health system (comes with the Hound, the first monster that wounds); co-op not tested live; Level 8's flow grid found no spots in a quick test; lurker pocket checked by numbers, not by eye.
+
+### Health (done 2026-11-22: `PlayerStatus.Health`, `PlayerAgent.Hurt`)
+- Wounds knock you down (camera drops and tilts, no moving for 1.1 s). Zero health = the same as being caught (checkpoint, or a co-op death); you wake up whole.
+- Healing: slow regen (starts 15 s after the last hit, full in 2.5 min, not while parched), almond water +0.12, first-aid kit (H / right-stick click) +0.6. Kits replace ~7% of almond-water pickups. HEALTH bar on the VHS readout only when hurt; health and kits are saved. Guests get wounds through `bk.hurt`.
+
+### Hound (done 2026-11-22: `Hound.cs`, `HoundLook.cs`, `Audio/CreatureSounds.cs`, model `Resources/Monsters/Hound.fbx` from `Art/build_hound.py`)
+- **Look:** a starved, waxy-grey human on all fours, long clawed fingers, black hair hanging over a jaw far too big; diagonal gait posed in code, rears up with the jaw open to lunge, crouches trembling when stared down. Growl loop, bark, maul (synthesized).
+- **Packs:** 2-3 on Levels 1, 2, 3, 9; alone on 4, 5 and (rarely) 0. Chance per director roll: 2/3 0.3, 1/9 0.2, 4/5 0.12, 0 0.04; 260 s cooldown. Each spawns out of sight in its own direction, prowling and growling; the first to see you (or hear you bolt within 18 m) barks and the rest come.
+- **Stare-down (canon):** looking straight at it (within 9°, 14° with the flashlight) while it sees you freezes it for 3 s (5 s with light). Running or looking away breaks it; 8 s before it works again.
+- **Maul and back off:** chase 4.3 m/s (sprint outruns it), lunge from 3.2 m, a hit takes 0.34 health (three hits and you're down), then it circles at ~5 m for 2.5-4.5 s and comes again. A pack takes turns: no lunge within 3 s of a packmate's maul.
+- **Untested:** co-op live; the Hound in the dark (no light interaction by design).
+
+### Skin-Stealer (done 2026-11-22: `SkinStealer.cs`, `SkinStealerLook.cs`, `GoreDeath.cs`, models `Resources/Monsters/SkinStealerWanderer.fbx` + `SkinStealer.fbx` from `Art/build_skinstealer.py`)
+- **Disguise:** a lost wanderer (jacket, jeans, backpack, a wet patch on the side). In co-op, 35% of the time it wears a friend's hazmat suit, its colour a shade off (the owner's suit model).
+- **Tells (user's picks):** clear blood (drops from the wet patch leave a trail on the floor, 40 s each) and wrong movement (no breathing, knees snapping slightly backwards each step, stiff arms, it turns its whole body to look, the head now and then snaps sideways and holds).
+- **Encounter:** it walks up and follows at ~3.5 m (jogs after you if you run). Walk away calmly with distance and its interest drains (12 s; 6 s beyond 14 m) and it wanders off. Alone (nobody within 12 m) with it close behind you, out of your view, for 2.5 s: the skin comes off (wet tearing), and the tall pale-yellow thing chases at 4.6 m/s. Lost for 6 s -> searches 12 s -> leaves. In co-op it picks whoever is alone.
+- **Catch (one hit, user asked for gory):** it grabs you, the view shakes, blood sprays over the lens and your top half drops sideways to the floor, then static and the checkpoint. The gore only plays on the victim's own screen (a friend just sees the catch).
+- **Spawning:** unchanged (Levels 1-3 4% per roll, elsewhere 0.4%, 300 s cooldown).
+- **Fixes found on the way:** colours given to `HdMat.Make` are sRGB, so dark-looking values went near-black in game (the Hound was affected too; retuned). The skin-modifier bodies had 6-14% inside-out faces; the build scripts now recalculate normals.
+
+### Clump (done 2026-11-22: `Clump.cs`, `ClumpLook.cs`, model `Resources/Monsters/Clump.fbx` from `Art/build_clump.py`)
+- **Look:** a knot of 16 human arms and legs of every length around a lumpy core, six bloodshot eyes sunk in it, a toothed pit of a mouth underneath, and one 2.6 m limb. Limbs slap down in turn as it crawls; the long one curls over the top like a tail and stretches out to grab.
+- **Blind, hunts by sound (Level 1 canon):** sprinting carries 14 m, walking 3.5 m, crouching or slow walking nothing. Director noises reach it too: talking in co-op, boards prised off, landing from a jump or fall (new: 4-20 m by height), an Exterminator shattering (new: 12 m).
+- **Three ways to meet one (35/45/20%):** buried in the floor with a crooked arm sticking up (noise, or stepping within 1.5 m, wakes it; it tears up out of the floor); crouched in a corner (two or more walls close); crawling in the ceiling ducts (scraping caption, follows the last sound, drops down when it's over it and someone is within 7 m). Levels 2/3 0.3 per roll, 1 0.18, 4/5/9 0.08, 0 0.03; 220 s cooldown.
+- **Grab:** within 2.6 m of someone who made a sound in the last 1.5 s (or within 1.3 m of anyone), the long limb hooks them and reels them in over 3.5 s while they bleed (0.08 health/s). Mash Interact to tear free: 6/9/12/15 presses by difficulty; it then recoils for 4 s. Reach the mouth and you're eaten (checkpoint). After a hunt it searches for 15 s, then digs back into the floor.
+- **Shortcuts:** co-op guests can't mash over the network yet (they tear free after 3.5 s, losing 0.3 health), and guests see the long limb curled rather than aimed while it holds someone. The buried arm's final pose was tweaked after the last capture and hasn't been checked by eye.
+
+### Facelings (done 2026-11-22: `Faceling.cs`, `FacelingLook.cs`; models `Resources/Monsters/Faceling.fbx`, `FacelingChild.fbx`, `FacelingEvolved.fbx` + baked maps in `FacelingTex/`)
+- **Models (remade after the user found the first ones terrible):** built in the live Blender by `Art/build_faceling_hq.py` (anatomical body from shaped parts fused by voxel remesh and smoothed, a faceless sculpted head with ears, real garments cut from the body with clean hems and folds, hair from the scalp) then `build_faceling_hq_export.py` (child/Evolved shaping, decimated game meshes ~40k tris, baked near-white detail colour + normal maps per part, rig, FBX). In game each Faceling tints its parts from palettes (shirt, trousers, skin, hair; 20% bald), so groups are mixed. Evolved: pin eyes, gaping mouth, torn clothes, a pipe. Shadow Facelings reuse the adult body in black, floating.
+- **Ordinary (Levels 0 rare, 1, 2, 4, 5, 9, Fun, 188):** groups of 2-4 adults (35% with a child beside one) on routines: pacing a route, "working" facing a wall, waving. Bump one, hold a light on its face 1.2 s, or stand within 1.6 m for 4 s and the group (within 12 m) turns on you; touch a child and its adult's group comes. Angry: 3.3 m/s, stop just short of you, the group takes turns, 0.1 health per blow (child 0.05), no knockdown; they calm after 14 s or 14 m.
+- **Evolved (Level 3 only):** hostile groups of 2-3; see 8 m, hear running 12 m / walking 3 m; chase 4.1 m/s; a pipe swing takes 0.25 health with knockdown, then a step back.
+- **Shadow (same levels plus 3, when you're in the dark):** drifts toward a lit flashlight (1.8 m/s) or slowly toward you; a beam held on its face 0.35 s startles it away; reaching you tears 0.2 health; light drives it off.
+- **Shortcuts:** guests see Facelings walk but not wave or "work"; the Level 3 Evolved were only tested on Level 0 (the level jump timed out in tests).
+
+## 23. Story mode campaign (draft 2026-11-22, not built)
+
+Bible: `STORY.md`. Plan: `STORY_PLAN.md`. Every line: `STORY_SCRIPT.md`. Waiting for the user's review; nothing is coded.
+
+### Pathing fix for every creature (2026-11-22)
+Two faults, both older than this rework or hidden by tests with a player who stood still: `NavGrid` ignored where a creature wanted to go and led to the cell it was last built around (only hunts rebuilt it), and it never saw walls, because they stand on the lines between its cells. Now: paths to any goal (a field per goal, cached), walls checked between neighbouring cells, corners rounded by way of the cell's middle, the grid kept around whoever is chased (`FearDirector.FollowPlayers`, 5 ms per rebuild, at most every 0.35 s), and off the grid creatures stop at walls. Measured: about 58-60 of every 60 test routes arrive, 2-5% brush a corner (it was ~90% through walls). Hound, Clump, Faceling, Evolved Faceling, Skin-Stealer, moth swarm and Praetorian were chased live against a walking player: 0 frames through walls. NOT retested live: a Smiler walking to a glowstick. Co-op weak hits no longer knock guests down (`bk.hurt` carries the knock flag).
+
+### Deathmoths (done 2026-11-22: `Deathmoths.cs`, `MothLook.cs`; `Art/build_deathmoth.py` -> `MothMale/Female/Praetorian/Empress/Hive/HiveSmall.fbx` + `MothTex/`)
+- **Models:** lofted, cambered wings painted with veins, bands and eye-spots, furred thorax with a death's-head, segmented abdomen, feathered antennae, compound eyes, spined legs. Wings and (Praetorian, Empress) legs are separate pieces moved in code.
+- **Swarm (14):** circles the nearest working light. A torch it can see within 18 m, or anyone within 3.5 m, draws it: spits a dodgeable glob every 2.2 s from 3.5-9 m (0.07 health), then smothers you (moths on the lens, 11 s of air, then 0.08 health/s). Light out and 6 m walked sheds them; a thrown glowstick within 22 m beats everything.
+- **Males:** 4 docile ones on Levels 1, 2, 8, 9. Set almond water down (B / d-pad left): they drink for 8 s, then keep you company for 90 s and steady your mind.
+- **Praetorian:** guards the hive (leash 18 m); 0.28 health a strike plus 5 s half-paralysed. **Empress** (1 hive in 5): close or lit, she frenzies every moth within 45 m; within 3 m a wingbeat throws you (0.18).
+- **Hive (user: "make the hive huge"):** Level 5, 0.35 per roll, 240 s cooldown. Picks the roomiest unseen hotel room within 45 m and fills it: wall to wall, floor to ceiling, up to 2.6 m deep (never more than 42% of the room), smaller growths on the side walls, solid, lights dead for 7.5 m. Two swarms, a Praetorian. Opening its door, coming within 3.6 m of its face, or a noise within 9 m wakes it.
+- **Level 3:** swarms with males among them, 0.25 per roll. **Repellent can** (Z / d-pad right, three sprays, 8% of battery spots): a 5 m cone clears a swarm; on Level 3 the females go and the males stay; a Praetorian only backs off.
+- **Shortcuts:** guests don't see spit in flight or a thinned flock, and a guest's mind isn't steadied by fed males. Co-op untested, and so are natural spawns and males finishing their drink. Growth over the hive's doorway was planned but not built.
+
+### Partygoers (done 2026-11-23: `Partygoer.cs`, `PartygoerLook.cs`, `Game/PartyScenes.cs`; `Art/build_partygoer.py` -> `Partygoer.fbx` + `PartygoerTex/`)
+- **Model:** 2.25 m, yellow leather, a carved bloody smile, blocky legs, boneless 7-bone arms ending in toothed cups, a two-part chest shell over a cavity with four clawed arms (39k triangles).
+- **Packs of 2-4, nearsighted:** sight 9 m (5 m if you crouch, +3 m with a torch, 12 m once chasing), ears 15 m for running and 6 m for walking, plus every director noise. They share what they notice; the nearest comes straight, the rest cut round to where you're heading. Chase 3.7 m/s against a 4.8 sprint. Solid furniture at waist height stops the reach.
+- **Catch:** one hit. Held up to the opening chest, then blood, black, checkpoint. One at a time.
+- **Fire:** road flare (T; on a pad the Exterminator button when you have none; 8% of battery spots, five on Level Fun; burns 40 s, also lures Smilers and moths). A lit Partygoer burns and leaves; the rest run for 22 s.
+- **Places:** Level Fun (packs of 2-3, up to about two at once), party traps on 1, 2, 4, 5 (linger 7 s within 4.5 m or touch anything), a very rare roaming pack on 0, 1, 2, 3, 5, 9 with red balloons and slowed music first. Level 4 has traps only.
+- **Voices:** taunts in your head while they search; in co-op, a lone player hears a friend's name calling. These lines show even with captions off.
+- **Removed:** `LegacyCreature.cs`, `CreatureBodyMotion.cs` and the old models' loading code (nothing used them).
+- **Measured:** 5 pack chases on Level 1: 0 frames through walls. Flares hit 6 of 6 (5 burning, 1 fleeing a packmate). 4 Partygoers cost no measurable fps.
+- **Not tested:** co-op (the voice lure, guests' trap and flare), natural spawning, running/walking being heard (the test player is moved without footsteps), the pickup and T key by hand.
+
+### Wretches (done 2026-11-23: `Wretch.cs`, `WretchLook.cs`, `Player/InfectionView.cs`; `Art/build_wretch.py` -> `Wretch.fbx`, `WretchMass.fbx` + `WretchTex/`)
+- **Models:** the skeletal Wretch (red-brown, flaking, holes, lidless, stray teeth and nails) with per-body extras: misplaced eyes, a third arm, bone wings, torn shirt and trousers in six colours. The mass: 34 eyes, 8 mouths, 5 limbs.
+- **Judge by voice:** low gurgle = dull (1.8 m/s), high chitter = quick (4.1 m/s, flanks, opens hotel doors). 1 in 8 sounds wrong. Claws 0.25 health, 35% infect. The mass (1.2 m/s) slams 0.4 and sprays sludge to 5.5 m (always infects).
+- **Playing dead:** some lie in the dark; they rise once you've passed and turned away, or if touched, lit on the face 3 s, run past, or a noise within 6 m.
+- **Barriers:** pryable boarded doorways (3.5 s, remembered and shared like prying) and shut hotel doors. Not nailed-shut, locked doors or crates.
+- **The Cycle** (`PlayerStatus.Infection`, saved): 6 min to turn (checkpoint). Itch, red-brown closing vision, your own voice begging, SKIN bar, reddening arms. Any almond water cures it. Also starts by itself after 90 s at thirst < 5% and mind < 25%.
+- **Places:** hordes of 3-6 on Level 8 (0.4 a roll, 18% with a mass); 1-3 in dark spots on 2, 3 (0.18), 1, 9 (0.12), 5 (0.08).
+- **Sloped levels:** `NavGrid.Uneven` (Level 8) walks floor heights out from the target; creatures' feet follow the ground there and on Level 9 (`Stepped`). Affects every creature on those levels.
+- **Measured:** 6 chases (Levels 2 and 8, walking player): 0 frames through walls, feet within 0.07 m of the rock. Playing dead 3/3. Grid build 8.8 ms on Level 8. Horde of 4: 48.8 -> 46.1 fps.
+- **Not tested:** co-op, natural spawning, hearing real footsteps, arm reddening by eye, Level 9, a tunnel crossing over another. **Shortcut:** in co-op a smashed hotel door opens only on the owner's game.
+
+## 24. Scarier and gorier (started 2026-11-23)
+
+**Decisions (user's answers):** extreme splatter (dismemberment, chunks, painted rooms) in unique deaths, on your own body, as found victims, and on co-op friends. Kills 4-6 s, two per monster, the first always in full, repeats skippable with Interact. Wounds bleed, injure (limp, shaky arm) and can cost you an arm until a checkpoint. Blood and bodies stay until you leave the level (capped). Monsters bleed, burn and are maimed by the existing counters but can't die. Fear is a mix of slow dread, stalking, jump scares (turn-around, environment, camera-only, tape and menu) and psychological tricks that never leave the game; co-op players often see different things. Small events about once a minute, hunts still rare. Real CC0/CC-BY recordings plus code (each file approved before download). No toggles, only a startup warning (Reduce Flashing stays). Own Blender models. Bosses after this. No gore on child Facelings.
+
+- **A · Blood:** spray, decals on floors and walls, lens blood, pools, trails; the startup warning. **Done 2026-11-23** (`Creatures/Blood.cs`, `UI/ContentWarning.cs`, atlas and material from `GrimeMaterials`). Every `PlayerAgent.Hurt` sprays; every death paints the room. 600 marks, one draw; cleared on leaving the level, kept on respawn. Tested solo on Levels 0 and 1, two Play sessions. Not tested: co-op, real monster attacks, other levels. Shortcut: a third co-op player doesn't see wounds yet.
+- **B · Wounds:** bleeding, bandages, limp, shaky arm, losing an arm; Hounds follow the trail. **Done 2026-11-23** (`Player/PlayerStatus.cs`, `Player/FirstPersonController.cs`, `Player/FirstPersonArms.cs`, `Creatures/Hound.cs`, `Creatures/Blood.cs`). Bleeding drains health over time until patched; bandages staunch bleeding; severe injuries trigger an asymmetrical limping walk bob and speed penalty; low health causes first-person arm trembling; heavy trauma severs an arm, leaving a bloody stump on the sleeve and repositioning the flashlight; Hounds sniff and stalk recent blood trails.
+- **C · Torn bodies:** Blender gore kit; ragdolls that come apart; found victims, drag marks and nests per monster; co-op bodies. **Done 2026-11-23** (`Art/build_gorekit.py` -> `GoreKit.fbx` & `GoreTex/`, `Creatures/GoreKit.cs`, `World/GoreDressing.cs`, `Game/DeathRagdoll.cs`, `Creatures/GoreDeath.cs`). Complete gore kit (stumps, guts, opened bellies, severed spines, picked ribs, flayed skulls/faces, cocoons, meat chunks); ragdoll dismemberment on violent death; procedural monster nests (Partygoer victims, Hound feeding dens with drag marks, Skin-Stealer flayed hides, Deathmoth cocoons); persistent dead wanderer corpses in co-op. Child Facelings are strictly and entirely excluded from all gore.
+- **D · Deaths:** two first-person kills per lethal creature (4–6 seconds on first viewing; repeat variants can be skipped), held execution poses and visible co-op corpses; child Facelings, harmless moth males and hives remain non-lethal. Counter hits leave persistent, replicated visual wounds. **Implemented; catalog and compilation checked 2026-11-24, gameplay/co-op still unverified** (`Creatures/GoreDeath.cs`, `CreatureWounds.cs`, `Player/PlayerAgent.cs`, `Net/CoopAvatar.cs`, `Net/CreatureProxy.cs`). A headless Unity compile completed with no C# errors; the death-catalog check passed for 13 lethal creature kinds and both variants. Dev console (F10) includes per-creature sequence preview and catalog check; `Backrooms > Run Self-Checks` also checks the death catalog. The full world self-check ran but reported 133 failures in existing world generation (including Level 0, 1, and 37); the catalog check itself passed. Still to playtest: first/repeat death sequences and skips, local and host/guest deaths, revival and second deaths, Deathmoth smother/acid attribution, counter wounds on each client, and corpse causes.
+- **E · Dread and stalking:** director small events once a minute; every hunter stalks before it attacks.
+- **F · Jump scares:** turn-around, environment, camera-only, tape and menu, spaced by the director.
+- **G · Mind:** low-sanity false monsters, friends, HUD and footage; different per co-op player.
+- **H · Audio:** recordings brought in alongside each stage.

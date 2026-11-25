@@ -20,11 +20,15 @@ namespace Backrooms.Player
 
         /// The current level's goal, shown small in the top left ("" for none).
         public string Objective { get; set; } = "";
+        /// Where the open exit is (null until the goal is done); drawn on the compass.
+        public Vector3? Waypoint { get; set; }
+        CompassBar compass;
         CanvasGroup meterGroup;
         UI.PaperView paperView;
         int logPage = -1;
         float flashUntil, wakeMeters, lastThirst = 1f;
         GameObject camOverlay;
+        RectTransform frame;
         Volume madness;
         AudioSource whisper;
         float nextHallucination;
@@ -47,7 +51,12 @@ namespace Backrooms.Player
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             scaler.matchWidthOrHeight = 1f;   // scale with height, so wide windows don't push things off the top
-            var root = canvasGo.transform;
+            // Everything sits inside the camcorder's picture, which is narrower than the screen in 4:3 mode.
+            var frameGo = new GameObject("Frame", typeof(RectTransform));
+            frameGo.transform.SetParent(canvasGo.transform, false);
+            frame = (RectTransform)frameGo.transform;
+            Stretch(frame);
+            var root = frame;
 
             // Meters, bottom left: camcorder-style readouts (battery blocks, bars), dim while everything's fine.
             meters = Label(root, font, 22, TextAnchor.LowerLeft, new Vector2(0.018f, 0.03f), new Vector2(520, 220), new Vector2(0f, 0f));
@@ -71,6 +80,8 @@ namespace Backrooms.Player
             flash.font = UI.PaperView.Handwriting;   // your own thoughts, in your own hand
             flash.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.8f);
 
+            compass = new CompassBar(root);
+
             // The sheet of paper you hold up: notes, painting backs, the logbook.
             paperView = canvasGo.AddComponent<UI.PaperView>();
             paperView.Init(root);
@@ -78,12 +89,14 @@ namespace Backrooms.Player
             camOverlay = new GameObject("Camcorder", typeof(RectTransform));
             camOverlay.transform.SetParent(root, false);
             Stretch((RectTransform)camOverlay.transform);
-            rec = Label(camOverlay.transform, font, 38, TextAnchor.UpperLeft, new Vector2(0.06f, 0.92f), new Vector2(300, 50), new Vector2(0f, 1f));
-            rec.color = new Color(1f, 0.25f, 0.2f);
-            recInfo = Label(camOverlay.transform, font, 30, TextAnchor.LowerRight, new Vector2(0.94f, 0.08f), new Vector2(600, 90), new Vector2(1f, 0f));
+            rec = Label(camOverlay.transform, font, 34, TextAnchor.UpperRight, new Vector2(0.94f, 0.92f), new Vector2(460, 90), new Vector2(1f, 1f));
+            rec.font = UI.Ui.Font;
+            rec.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.6f);
+            recInfo = Label(camOverlay.transform, font, 28, TextAnchor.LowerRight, new Vector2(0.94f, 0.08f), new Vector2(600, 90), new Vector2(1f, 0f));
+            recInfo.font = UI.Ui.Font;
+            recInfo.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.6f);
             foreach (var corner in new[] { new Vector2(0.05f, 0.9f), new Vector2(0.95f, 0.9f), new Vector2(0.05f, 0.1f), new Vector2(0.95f, 0.1f) })
                 Corner(camOverlay.transform, corner);
-            camOverlay.SetActive(false);
 
             madness = MakeMadness();
             tools.Looted += m => Flash(m, 4f);
@@ -97,6 +110,7 @@ namespace Backrooms.Player
         void Update()
         {
             meters.text = Meters();
+            compass.Tick(transform.eulerAngles.y, Waypoint, transform.position);
             objective.text = showDebug || string.IsNullOrEmpty(Objective) ? "" : $"<color=#FFDB6B>\u25B8</color> {Objective}";
             var voice = VoiceChat.Instance;
             voiceIndicator.text = voice == null ? "" : voice.Muted ? "MIC MUTED" : voice.Talking ? "● MIC" : "";
@@ -120,6 +134,8 @@ namespace Backrooms.Player
                 : tools.LookingAtGoalDoor != null && tools.LookingAtGoalDoor.Locked ? $"{e}  Try the door"
                 : tools.LookingAtFood != null ? $"{e}  {tools.LookingAtFood.Label}"
                 : tools.LookingAtSeat != null ? $"{e}  Sit down"
+                : tools.LookingAtWater != null ? $"{e}  {tools.LookingAtWater.Label}"
+                : tools.LookingAtThing != null ? $"{e}  {tools.LookingAtThing.Prompt}"
                 : tools.LookingAtFriend != null ? (status.AlmondWater > 0 ? $"{e}  Give almond water" : status.Batteries > 0 ? $"{e}  Give a battery" : "")
                 : tools.LookingAtBoards != null ? (tools.LookingAtBoards.Pryable
                     ? (tools.LookingAtBoards.Progress > 0f ? $"{(tools.LookingAtBoards.LockedDoor ? "Forcing" : "Prying")}...  {Mathf.RoundToInt(tools.LookingAtBoards.Progress * 100)}%"
@@ -129,11 +145,19 @@ namespace Backrooms.Player
             Paper();
             if (Time.time > flashUntil) flash.text = "";
 
-            camOverlay.SetActive(tools.CamcorderUp);
-            if (tools.CamcorderUp)
+            // The viewfinder: the game is the tape, so it's always rolling. Raising the camcorder = NightShot zoom.
+            float visible = Look.Camcorder.Instance != null ? Look.Camcorder.Instance.VisibleWidth : 1f;
+            frame.anchorMin = new Vector2(0.5f - visible * 0.5f, 0f);
+            frame.anchorMax = new Vector2(0.5f + visible * 0.5f, 1f);
+            var goalRt = objective.rectTransform;   // a narrow 4:3 frame has no room beside the compass
+            goalRt.anchorMin = goalRt.anchorMax = new Vector2(0.018f, visible < 0.99f ? 0.93f : 0.965f);
+            camOverlay.SetActive(tools.ReadingText == null && !tools.LogbookOpen);
+            if (camOverlay.activeSelf)
             {
-                rec.text = Mathf.Repeat(Time.time, 1f) < 0.6f ? "● REC" : "  REC";
-                recInfo.text = $"{System.DateTime.Now:MMM dd yyyy}\n{System.DateTime.Now:hh:mm:ss tt}   BAT {Mathf.RoundToInt(tools.CamcorderBattery * 100)}%";
+                var now = System.DateTime.Now;
+                rec.text = (Mathf.Repeat(Time.unscaledTime, 1f) < 0.6f ? "<color=#FF4033>\u25CF</color> REC" : "   REC")
+                    + (tools.CamcorderUp ? $"\n<size=24>NIGHTSHOT  \u00D71.3   {Mathf.RoundToInt(tools.CamcorderBattery * 100)}%</size>" : "");
+                recInfo.text = now.ToString("MMM dd yyyy").ToUpperInvariant() + "\n" + now.ToString("hh:mm:ss tt");
             }
 
             if (Keyboard.current != null && Keyboard.current.f8Key.wasPressedThisFrame) showDebug = !showDebug;
@@ -177,7 +201,9 @@ namespace Backrooms.Player
                                : $"<color={col}>{label,-7}{Blocks(v, n)}</color>";
             }
             var sb = new System.Text.StringBuilder();
-            sb.Append($"<color=#F0EBDDAA>WATER x{status.AlmondWater}   BATT x{status.Batteries}</color>\n");
+            sb.Append($"<color=#F0EBDDAA>WATER x{status.AlmondWater}   BATT x{status.Batteries}{(status.Glowsticks > 0 ? $"   GLOW x{status.Glowsticks}" : "")}{(status.Exterminators > 0 ? $"   EXT x{status.Exterminators}" : "")}{(status.FirstAid > 0 ? $"   AID x{status.FirstAid}" : "")}{(status.Repellent > 0 ? $"   SPRAY x{status.Repellent}" : "")}{(status.Flares > 0 ? $"   FLARE x{status.Flares}" : "")}</color>\n");
+            if (status.Health < 0.99f) sb.Append(Line("HEALTH", status.Health, 10, false)).Append('\n');
+            if (status.Infection > 0f) sb.Append(Line("SKIN", 1f - status.Infection, 10, false)).Append('\n');
             if (status.Stamina < 0.99f) sb.Append(Line("STAMINA", status.Stamina, 10, false)).Append('\n');
             if (swimmer != null && swimmer.HasSwimControl && swimmer.Underwater)
             {
@@ -186,6 +212,7 @@ namespace Backrooms.Player
                 if (map != null)
                     sb.Append($"<color=#F0EBDDAA>{Key(map.FindAction("Sprint"))} swim fast   {Key(map.FindAction("Jump"))} rise   {Key(map.FindAction("Crouch"))} dive</color>\n");
             }
+            if (swimmer != null && swimmer.Smothered && !swimmer.Underwater) sb.Append(Line(swimmer.Breath <= 0f ? "NO AIR" : "AIR", swimmer.Breath, 10, false)).Append('\n');
             sb.Append(Line("MIND", status.Sanity, 10, false)).Append('\n');
             sb.Append(Line("THIRST", status.Thirst, 10, false)).Append('\n');
             sb.Append(Line("CAM", tools.CamcorderBattery, 5, true)).Append('\n');

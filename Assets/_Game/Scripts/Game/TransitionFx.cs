@@ -47,6 +47,7 @@ namespace Backrooms.Game
         {
             sound.volume = Meta.AudioMix.Effects;
             sound.Play();
+            Look.Camcorder.Hit(1f);   // the tape loses tracking on the way through
             for (float t = 0f; t < glitchTime; t += Time.unscaledDeltaTime)
             {
                 RefreshNoise();
@@ -64,6 +65,7 @@ namespace Backrooms.Game
             SetAlpha(noise, 0f);
             swap();
             yield return new WaitForSecondsRealtime(holdTime);
+            Look.Camcorder.Hit(0.7f);   // and comes back in rolling
             for (float t = 0f; t < revealTime; t += Time.unscaledDeltaTime)
             {
                 SetAlpha(black, 1f - t / revealTime);

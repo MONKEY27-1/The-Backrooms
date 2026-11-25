@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Backrooms.World;
+using Backrooms.Creatures;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace Backrooms.EditorTools
             var catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>("Assets/_Game/Data/LevelCatalog.asset");
             if (catalog == null) { Debug.LogError("[SelfCheck] no level catalog; run Backrooms > Create Game Scene"); return false; }
             int failures = 0;
+            if (!GoreDeath.CheckCatalog(out var deathError)) { failures++; Debug.LogError("[SelfCheck] death catalog: " + deathError); }
             foreach (var level in catalog.levels)
             {
                 if (level.generator == LevelGenerator.Static)
@@ -93,12 +95,24 @@ namespace Backrooms.EditorTools
             {
                 var a = ChunkStreamer.GenerateChunk(level, seed, cx, cz, 0);
                 var b = ChunkStreamer.GenerateChunk(level, seed, cx, cz, 0);
-                if (a.Boxes.Count != b.Boxes.Count || a.Quads.Count != b.Quads.Count || a.Props.Count != b.Props.Count || a.Water.Count != b.Water.Count)
+                if (a.Boxes.Count != b.Boxes.Count || a.Quads.Count != b.Quads.Count || a.Props.Count != b.Props.Count || a.Water.Count != b.Water.Count || a.Rocks.Count != b.Rocks.Count || a.Rocks.Exists(r => r.V.Count != b.Rocks[a.Rocks.IndexOf(r)].V.Count))
                 {
                     failures++;
                     Debug.LogError($"[SelfCheck] special level {level.id}: chunk {cx},{cz} is not deterministic");
                 }
             }
+            if (level.generator == LevelGenerator.Suburbs)
+                for (uint k = 0; k < 40; k++)
+                {
+                    string bad = SuburbsLayout.CheckLine(seed + k * 7919u);
+                    if (bad != null) { failures++; Debug.LogError($"[SelfCheck] level 9, seed {seed + k * 7919u}: {bad}"); }
+                }
+            if (level.generator == LevelGenerator.Caves)
+                for (uint k = 0; k < 12; k++)
+                {
+                    string bad = CaveLayout.CheckRoad(seed + k * 7919u);
+                    if (bad != null) { failures++; Debug.LogError($"[SelfCheck] level 8, seed {seed + k * 7919u}: {bad}"); }
+                }
             Debug.Log($"[SelfCheck] special level {level.id} ({level.generator}) checked across 9 chunks: fully deterministic");
             return failures;
         }

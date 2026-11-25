@@ -214,12 +214,18 @@ namespace Backrooms.Net
             LevelSync.Hook(this);
             Player.PlayerAgent.RemoteSanityLoss -= SendSanity;
             Player.PlayerAgent.RemoteSanityLoss += SendSanity;
+            Player.PlayerAgent.RemoteHurt -= SendHurt;
+            Player.PlayerAgent.RemoteHurt += SendHurt;
+            Player.PlayerAgent.RemoteInfect -= SendInfect;
+            Player.PlayerAgent.RemoteInfect += SendInfect;
         }
 
         void OnDestroy()
         {
             if (Coop.Session == this) Coop.Session = null;
             Player.PlayerAgent.RemoteSanityLoss -= SendSanity;
+            Player.PlayerAgent.RemoteHurt -= SendHurt;
+            Player.PlayerAgent.RemoteInfect -= SendInfect;
         }
 
         // ---------- sign-in ----------
@@ -939,6 +945,8 @@ namespace Backrooms.Net
             m.RegisterNamedMessageHandler(Msg.Enter, OnEnter);
             m.RegisterNamedMessageHandler(Msg.Exit, OnExit);
             m.RegisterNamedMessageHandler(Msg.Sanity, OnSanity);
+            m.RegisterNamedMessageHandler(Msg.Hurt, OnHurt);
+            m.RegisterNamedMessageHandler(Msg.Infect, OnInfect);
             m.RegisterNamedMessageHandler(Msg.Kicked, OnKicked);
             m.RegisterNamedMessageHandler(Msg.HandOff, OnHandOff);
             m.RegisterNamedMessageHandler(Msg.MoveTo, OnMoveTo);
@@ -1033,7 +1041,7 @@ namespace Backrooms.Net
 
         static class Msg
         {
-            public const string Hello = "bk.hello", World = "bk.world", Enter = "bk.enter", Exit = "bk.exit", Sanity = "bk.sanity",
+            public const string Hello = "bk.hello", World = "bk.world", Enter = "bk.enter", Exit = "bk.exit", Sanity = "bk.sanity", Hurt = "bk.hurt", Infect = "bk.infect",
                 Kicked = "bk.kicked", HandOff = "bk.handoff", MoveTo = "bk.moveto",
                 Ready = "bk.ready", Lobby = "bk.lobby", Join = "bk.join", Start = "bk.start", LobbyCfg = "bk.lobbycfg", Suit = "bk.suit";
         }
@@ -1165,6 +1173,55 @@ namespace Backrooms.Net
             amount = Mathf.Clamp(amount, 0f, 1f);
             var me = Player.Players.Local;
             if (me != null) me.LoseSanity(amount);
+        }
+
+        /// A creature on the owner's game wounded a guest: their own game applies it (and decides if they go down).
+        void SendHurt(Player.PlayerAgent who, float amount, bool knock, Player.DeathAttack? attack)
+        {
+            if (Net == null || !Net.IsServer || who == null || !who.TryGetComponent(out NetworkObject no)) return;
+            amount = Mathf.Clamp(amount, 0f, 1f);
+            bool hasAttack = attack.HasValue;
+            var a = attack ?? default;
+            Send(Msg.Hurt, no.OwnerClientId, w =>
+            {
+                w.WriteValueSafe(amount); w.WriteValueSafe(knock); w.WriteValueSafe(hasAttack);
+                if (!hasAttack) return;
+                w.WriteValueSafe((byte)a.Kind); w.WriteValueSafe((byte)a.Variant);
+                w.WriteValueSafe(a.KillerPosition); w.WriteValueSafe(a.KillerYaw);
+            });
+        }
+
+        void SendInfect(Player.PlayerAgent who)
+        {
+            if (Net == null || !Net.IsServer || who == null || !who.TryGetComponent(out NetworkObject no)) return;
+            Send(Msg.Infect, no.OwnerClientId, w => w.WriteValueSafe(true));
+        }
+
+        void OnInfect(ulong from, FastBufferReader r)
+        {
+            if (Net == null || Net.IsServer || from != NetworkManager.ServerClientId) return;
+            var me = Player.Players.Local;
+            if (me != null) me.Infect();
+        }
+
+        void OnHurt(ulong from, FastBufferReader r)
+        {
+            r.ReadValueSafe(out float amount);
+            r.ReadValueSafe(out bool knock);
+            r.ReadValueSafe(out bool hasAttack);
+            Player.DeathAttack attack = default;
+            if (hasAttack)
+            {
+                r.ReadValueSafe(out byte kind); r.ReadValueSafe(out byte variant);
+                r.ReadValueSafe(out Vector3 at); r.ReadValueSafe(out float yaw);
+                if (!System.Enum.IsDefined(typeof(Creatures.CreatureKind), (int)kind)) return;
+                attack = new Player.DeathAttack { Kind = (Creatures.CreatureKind)kind, Variant = variant & 1, KillerPosition = at, KillerYaw = yaw };
+            }
+            if (Net == null || Net.IsServer || from != NetworkManager.ServerClientId) return;
+            if (float.IsNaN(amount) || float.IsInfinity(amount)) return;
+            var me = Player.Players.Local;
+            if (me == null) return;
+            me.Hurt(Mathf.Clamp(amount, 0f, 1f), knock, fatal: hasAttack ? attack : (Player.DeathAttack?)null);   // our own health decides whether this is the killing blow
         }
 
         // ---------- helpers ----------

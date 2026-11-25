@@ -5,100 +5,128 @@ namespace Backrooms.Creatures
 {
     public enum CreatureKind
     {
-        Smiler,     // hunter: lives in the dark. Tell: a grin in the black and a crackle. Way out: hide, or outlast the dark.
+        Smiler,     // wiki Entity 3: a grin in the dark. Hold its gaze and back away; run, shout or shine a light and it comes.
         Faceling,   // resident: a faceless person who stands and watches, steps away when you come close. Harmless.
         SkinStealer, // looks like an ordinary wanderer until approached, then reveals itself and attacks.
-        PartyGoer,   // rare, roaming hunter; seeing its fixed smile may be the last warning.
+        PartyGoer,   // wiki Entity 67: nearsighted packs that hunt by sound. One touch is the end; fire breaks them up.
+        Clump,       // wiki Entity 5: a knot of limbs, blind, hunts by sound; buried, cornered or in the ducts. Reels you into its mouth.
+        FacelingChild, EvolvedFaceling, ShadowFaceling,   // wiki Entity 9's other kinds (see Faceling.cs)
+        Hound,       // wiki Entity 8: packs on all fours. Stare one down; don't bolt on sight. Mauls, backs off, circles.
+        MothSwarm, MothMales, Praetorian, MothEmpress, MothHive,   // wiki Entity 4 (see Deathmoths.cs)
+        Wretch, WretchMass,   // wiki Entity 15: judge one by its voice; boards don't hold them; their sludge turns you
     }
 
-    public enum CreatureState { Stalk, Chase, Search, Leave, Watch, Disguise }
+    // Appended only: co-op sends the state as a byte.
+    public enum CreatureState { Stalk, Chase, Search, Leave, Watch, Disguise, Lurk, Stare, Lured, Numb, Circle, Lunge, Held, Grab, Vent, Break }
 
     /// What a creature can see of the world: the flow field and the darkness. Players come from `Players`.
     public interface ICreatureWorld
     {
         NavGrid Grid { get; }
         bool Dark { get; }
+        /// Is this spot dark (no working light close by, or a blackout)?
+        bool DarkAt(Vector3 p);
         void Caught(Creature by, PlayerAgent who);
+        /// A Smiler was hit by an Exterminator: keep them away for a long while.
+        void Numbed(Creature who);
+        /// A voice in this player's head (on their own game); `from` if it seems to come from somewhere.
+        void Whisper(PlayerAgent who, string line, Vector3? from = null);
     }
 
-    /// One shared brain; each kind sets its own numbers. States: stalk -> chase -> search -> leave (hunters),
-    /// watch -> leave (residents).
-    public sealed class Creature : MonoBehaviour
+    /// The shared body of every creature: spawning, senses, movement and state timing. Each kind's brain
+    /// decides what to do with them in Think.
+    public abstract class Creature : MonoBehaviour
     {
         public CreatureKind Kind;
         public CreatureState State { get; private set; }
 
-        ICreatureWorld world;
-        /// Who it's after (hunters) or watching (residents): the nearest living player unless it's chasing someone.
-        public PlayerAgent Target { get; private set; }
-        Vector3 lastSeen;
-        float stateTime, lostFor, seenFor, life;
-        AudioSource voice;
-        Transform glow;   // the Smiler's grin and eyes
-        bool hostile;
-        bool revealed;
-        CreatureBodyMotion bodyMotion;
-
-        float StalkSpeed => Kind == CreatureKind.PartyGoer ? 1.5f : 1.1f;
-        float ChaseSpeed => Kind == CreatureKind.PartyGoer ? 4.8f : Kind == CreatureKind.SkinStealer ? 4.5f : 4.0f;
-        const float CatchDistance = 1.1f;
+        protected ICreatureWorld world;
+        /// Who it's after (hunters) or watching (residents).
+        public PlayerAgent Target { get; protected set; }
+        protected float stateTime, life;
+        protected AudioSource voice;
 
         /// A creature appeared (co-op mirrors it for the guests).
         public static event System.Action<Creature> Spawned;
+        /// The authority started a friend's kill. The friend plays it before reporting the death back.
+        public static event System.Action<DeathAttack, PlayerAgent> RemoteExecution;
 
-        public static Creature Spawn(CreatureKind kind, Vector3 at, ICreatureWorld world)
+        public CreatureWounds Wounds { get; private set; }
+        public bool Executing { get; private set; }
+        float executionEnds;
+        bool executionSent;
+
+        void Awake() => Wounds = gameObject.AddComponent<CreatureWounds>();
+
+        public int NextDeathVariant() => Random.Range(0, 2);
+
+        public void HoldForExecution(PlayerAgent victim)
+        {
+            if (victim == null || executionSent) return;
+            executionSent = Executing = true;
+            executionEnds = Time.time + 9f;
+            Target = victim;
+            Set(CreatureState.Grab);
+        }
+
+        public void ResumeAfterExecution()
+        {
+            if (!Executing) return;
+            Executing = executionSent = false;
+            if (world != null && Players.AnyAlive()) Set(CreatureState.Leave);
+        }
+
+        /// Begin one of this creature's two full first-person kills. The actual checkpoint/spectator
+        /// transition happens only after that sequence finishes on the victim's own game.
+        public void Execute(PlayerAgent victim, int variant = -1)
+        {
+            if (victim == null || !victim.Alive || victim.Dying || executionSent) return;
+            var attack = DeathAttack.From(this, variant);
+            HoldForExecution(victim);
+            victim.Dying = true;
+            victim.DeathCause = Kind;
+            if (victim.IsLocal)
+            {
+                victim.CommitFatalAttack(this, attack.Variant);
+                world?.Caught(this, victim);
+            }
+            else RemoteExecution?.Invoke(attack, victim);
+        }
+
+        public static bool IsFaceling(CreatureKind k) => k == CreatureKind.Faceling || k == CreatureKind.FacelingChild || k == CreatureKind.EvolvedFaceling || k == CreatureKind.ShadowFaceling;
+
+        public static Creature Spawn(CreatureKind kind, Vector3 at, ICreatureWorld world, CreatureState start = CreatureState.Stalk)
         {
             var go = new GameObject(kind.ToString());
             go.transform.position = at;
-            var c = go.AddComponent<Creature>();
+            Creature c = kind == CreatureKind.Smiler ? go.AddComponent<Smiler>() : kind == CreatureKind.Hound ? go.AddComponent<Hound>() : kind == CreatureKind.SkinStealer ? go.AddComponent<SkinStealer>() : kind == CreatureKind.Clump ? go.AddComponent<Clump>() : IsFaceling(kind) ? go.AddComponent<Faceling>() : Deathmoth.Is(kind) ? Deathmoth.Add(go, kind) : kind == CreatureKind.Wretch || kind == CreatureKind.WretchMass ? go.AddComponent<Wretch>() : go.AddComponent<Partygoer>();
             c.Kind = kind;
             c.world = world;
-            c.hostile = kind == CreatureKind.Smiler || kind == CreatureKind.PartyGoer;
-            c.revealed = kind != CreatureKind.SkinStealer;
-            c.State = kind == CreatureKind.SkinStealer ? CreatureState.Disguise : c.hostile ? CreatureState.Stalk : CreatureState.Watch;
-            CreatureBodies.Build(kind, go.transform, out c.glow);
-            CreatureBodies.SetSkinStealerRevealed(go.transform, c.revealed);
-            c.bodyMotion = go.AddComponent<CreatureBodyMotion>();
-            c.bodyMotion.Initialize(kind);
             c.voice = go.AddComponent<AudioSource>();
             c.voice.spatialBlend = 1f;
             c.voice.rolloffMode = AudioRolloffMode.Linear;
             c.voice.maxDistance = 22f;
             c.voice.loop = true;
             c.voice.dopplerLevel = 0f;
-            if (kind == CreatureKind.Smiler)
-            {
-                c.voice.clip = Audio.ProceduralAudio.Static();
-                c.voice.pitch = 0.45f;
-                c.voice.volume = 0.25f * Meta.AudioMix.Creatures;
-                c.voice.Play();
-            }
             c.Target = Players.Nearest(at);
+            c.Begin(start);
             if (c.Target != null) c.Face(c.Target.Position);
             Spawned?.Invoke(c);
             return c;
         }
 
-        /// A loud noise somewhere: a hunter that hasn't found you yet comes to look.
-        public void Hear(Vector3 where, float radius)
-        {
-            if (!hostile || State == CreatureState.Leave || State == CreatureState.Chase || State == CreatureState.Disguise) return;
-            if (Vector3.Distance(where, transform.position) > radius) return;
-            lastSeen = where;
-            Set(CreatureState.Search);
-        }
+        /// Builds the body and picks the first state.
+        protected abstract void Begin(CreatureState start);
+        protected abstract void Think(float dt);
+        /// A loud noise somewhere.
+        public virtual void Hear(Vector3 where, float radius) { }
+        protected virtual void Entered(CreatureState s) { }
 
-        void Set(CreatureState s)
+        protected void Set(CreatureState s)
         {
             State = s;
             stateTime = 0f;
-            if (Kind == CreatureKind.SkinStealer && !revealed && s == CreatureState.Chase)
-            {
-                revealed = true;
-                hostile = true;
-                CreatureBodies.SetSkinStealerRevealed(transform, true);
-                if (voice != null) voice.PlayOneShot(Audio.ProceduralAudio.Laughter(), 0.45f * Meta.AudioMix.Creatures);
-            }
+            Entered(s);
         }
 
         void Update()
@@ -107,118 +135,18 @@ namespace Backrooms.Creatures
             stateTime += dt;
             life += dt;
             if (world == null || !Players.AnyAlive()) { Destroy(gameObject); return; }
-            // A chase sticks to its prey while they live; otherwise it turns to whoever is nearest.
-            if (Target == null || !Target.Alive || State != CreatureState.Chase) Target = Players.Nearest(transform.position);
-            if (Target == null) return;
-            if (hostile && State == CreatureState.Stalk)
-                foreach (var other in Players.All)   // anyone who gives themselves away becomes the prey
-                    if (other != null && other.Alive && other != Target)
-                    {
-                        float d = Flat(other.Position - transform.position).magnitude;
-                        if (Noticed(other, d, CanSee(other, d))) { Target = other; break; }
-                    }
-            var player = Target.Position;
-            float dist = Flat(player - transform.position).magnitude;
-            bool sees = CanSee(Target, dist);
-
-            if (Kind == CreatureKind.SkinStealer && State == CreatureState.Disguise)
+            if (Executing)
             {
-                Face(player, 90f);
-                // It passes for a lone wanderer until you get close enough to recognize what is wrong.
-                if ((sees && dist < 5f) || dist < 2.5f)
-                {
-                    lastSeen = player;
-                    Set(CreatureState.Chase);
-                }
-                else if (life > 150f) Set(CreatureState.Leave);
+                if (Target != null) Face(Target.Position, 720f);
+                if (Time.time >= executionEnds) { Executing = false; executionSent = false; Set(CreatureState.Leave); }
+                return;   // held in the kill pose; the victim's sequence decides when the body falls
             }
-            else if (hostile) Hunt(player, dist, sees, dt);
-            else Reside(player, dist, dt);
-        }
-
-        // ---------- hunters ----------
-
-        void Hunt(Vector3 player, float dist, bool sees, float dt)
-        {
-            // The grin only shows in the dark; in the light it is just gone.
-            if (Kind == CreatureKind.Smiler && !world.Dark && State != CreatureState.Leave) Set(CreatureState.Leave);
-            if (glow != null) glow.gameObject.SetActive(State != CreatureState.Leave || Mathf.Repeat(stateTime * 7f, 1f) < 0.5f);
-
-            switch (State)
-            {
-                case CreatureState.Stalk:
-                    // Drifts closer, keeping its distance, until something gives you away.
-                    if (Noticed(Target, dist, sees)) { lastSeen = player; Set(CreatureState.Chase); break; }
-                    if (dist > 7f) MoveToward(player, StalkSpeed, dt);
-                    Face(player);
-                    if (stateTime > 50f) Set(CreatureState.Leave);
-                    break;
-
-                case CreatureState.Chase:
-                    if (sees) { lastSeen = player; lostFor = 0f; }
-                    else lostFor += dt;
-                    MoveToward(sees ? player : lastSeen, ChaseSpeed, dt);
-                    Face(sees ? player : lastSeen);
-                    if (dist < CatchDistance && sees) { world.Caught(this, Target); Set(CreatureState.Leave); break; }
-                    if (lostFor > 4f) Set(CreatureState.Search);   // you broke its line of sight long enough
-                    break;
-
-                case CreatureState.Search:
-                    if (Noticed(Target, dist, sees)) { lastSeen = player; Set(CreatureState.Chase); break; }
-                    if (Flat(lastSeen - transform.position).magnitude > 0.8f) MoveToward(lastSeen, StalkSpeed * 1.5f, dt);
-                    else transform.Rotate(0f, 60f * dt, 0f);   // looks around where it lost you
-                    if (stateTime > 12f) Set(CreatureState.Leave);
-                    break;
-
-                case CreatureState.Leave:
-                    voice.volume = Mathf.MoveTowards(voice.volume, 0f, dt * 0.3f);
-                    if (stateTime > 1.5f) Destroy(gameObject);
-                    break;
-            }
-
-            if (voice == null || Kind != CreatureKind.Smiler) return;
-            if (State == CreatureState.Chase) { voice.pitch = 0.75f; voice.volume = Mathf.MoveTowards(voice.volume, 0.6f * Meta.AudioMix.Creatures, dt); }
-            else if (State != CreatureState.Leave) { voice.pitch = 0.45f; voice.volume = 0.25f * Meta.AudioMix.Creatures; }
-        }
-
-        /// Does it notice this player? A flashlight beam on it, running nearby, or being seen up close.
-        bool Noticed(PlayerAgent who, float dist, bool sees)
-        {
-            if (sees && who.FlashlightOn && dist < 20f)
-            {
-                var toMe = (transform.position + Vector3.up * 1.6f - who.Eyes).normalized;
-                if (Vector3.Angle(who.Forward, toMe) < 25f) return true;   // they shone the light on it
-            }
-            if (who.Running && dist < 18f) return true;                    // it heard them run
-            float sight = 9f * (who.Crouching ? 0.45f : 1f) * (who.FlashlightOn ? 1.8f : 1f);
-            if (sees && dist < sight) return true;
-            return dist < 2.2f;   // close enough to smell
-        }
-
-        // ---------- residents ----------
-
-        void Reside(Vector3 player, float dist, float dt)
-        {
-            bool inView = InPlayerView();
-            if (inView) seenFor += dt;
-            switch (State)
-            {
-                case CreatureState.Watch:
-                    Face(player, 25f);
-                    if (dist < 6f) MoveToward(transform.position + Flat(transform.position - player).normalized * 3f, 1.0f, dt, false);
-                    if (seenFor > 2f && !inView && stateTime > 8f) Set(CreatureState.Leave);   // gone the moment you look away
-                    if (life > 90f) Set(CreatureState.Leave);
-                    break;
-                case CreatureState.Leave:
-                    if (!inView || stateTime > 6f) Destroy(gameObject);
-                    else MoveToward(transform.position + transform.forward * -2f, 0.8f, dt, false);
-                    break;
-            }
+            Think(dt);
         }
 
         // ---------- senses and movement ----------
 
-        bool CanSee(PlayerAgent who, float dist)
+        protected bool CanSee(PlayerAgent who, float dist)
         {
             if (dist > 30f) return false;
             var from = transform.position + Vector3.up * 1.7f;
@@ -226,25 +154,46 @@ namespace Backrooms.Creatures
         }
 
         /// Is any living player looking at it?
-        bool InPlayerView() => Players.AnySees(transform.position + Vector3.up * 1.2f);
+        protected bool InPlayerView() => Players.AnySees(transform.position + Vector3.up * 1.2f);
 
-        void MoveToward(Vector3 target, float speed, float dt, bool usePath = true)
+        protected void MoveToward(Vector3 target, float speed, float dt, bool usePath = true)
         {
-            var next = usePath && world.Grid != null ? world.Grid.NextWaypoint(transform.position, target) : target;
+            var next = target;
+            if (usePath) usePath = world.Grid != null && world.Grid.NextWaypoint(transform.position, target, out next);   // no known way: straight, minding the walls
             var step = Flat(next - transform.position);
             if (step.sqrMagnitude < 0.0001f) return;
             var move = Vector3.ClampMagnitude(step, speed * dt);
-            if (!usePath && Physics.CheckSphere(transform.position + move + Vector3.up * 1f, 0.3f, ~0, QueryTriggerInteraction.Ignore)) return;
+            if (!usePath && Blocked(transform.position + move)) return;
             transform.position += move;
+            if (world.Grid != null && (world.Grid.Uneven || world.Grid.Stepped)) Ground(dt);
         }
 
-        void Face(Vector3 target, float degreesPerSecond = 720f)
+        /// Sloping levels (the caves): feet on the rock.
+        void Ground(float dt)
+        {
+            if (!Physics.Raycast(transform.position + Vector3.up * 1.2f, Vector3.down, out var hit, 3f, ~0, QueryTriggerInteraction.Ignore) || Players.Owns(hit.collider) != null) return;
+            var p = transform.position;
+            p.y = Mathf.MoveTowards(p.y, hit.point.y, dt * 6f);
+            transform.position = p;
+        }
+
+        static readonly Collider[] touching = new Collider[8];
+
+        /// Something solid there (players don't count: creatures come right up to them).
+        static bool Blocked(Vector3 p)
+        {
+            int n = Physics.OverlapSphereNonAlloc(p + Vector3.up, 0.3f, touching, ~0, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < n; i++) if (Players.Owns(touching[i]) == null) return true;
+            return false;
+        }
+
+        protected void Face(Vector3 target, float degreesPerSecond = 720f)
         {
             var d = Flat(target - transform.position);
             if (d.sqrMagnitude < 0.01f) return;
             transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), degreesPerSecond * Time.deltaTime);
         }
 
-        static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
+        protected static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0f, v.z);
     }
 }

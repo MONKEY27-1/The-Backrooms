@@ -29,10 +29,24 @@ namespace Backrooms.World
         Vines, Plant, MossPatch,                                                            // Garden sector
         NeonStrip, Cables,                                                                  // Fabled sector
         Tripod,                                                                              // Level 0 survey equipment
+        Generator, Transformer, Conveyor, ConveyorMotor, BreakerPanel, SludgePipe, Plinth,  // Level 3 (Blender models)
+        CableTray, CageBulb, SludgePool, BarFence,                                          // Level 3 (built here)
+        OfficeWindow, WaterCooler, VendingMachine, DrinkFountain,                           // Level 4 (Blender models)
+        CarpetDent, FloorOutlet, BadgeReader, MoldTray,                                     // Level 4 (built here)
+        Chandelier, CageElevator, Sconce, Gramophone, MahjongTable, HotelBed,              // Level 5 (Blender models)
+        Bones, TarMound, Beacon,                                                            // Level 7 (built here)
+        Glowstick, Exterminator,                                                            // throwables (Smiler lure, wiki Object 3)
+        FirstAid,                                                                           // heals Hound wounds
+        Repellent,                                                                          // Deathmoth repellent can
+        Flare,                                                                              // road flare (sets a Partygoer alight)
+        BoatWreck, RoadMarker,                                                              // Level 7's boats, Level 8's 9th Road posts
+        StreetLamp, Mailbox, Toilet, Bathtub, Stove, SwingSet, Grill, WheelieBin,           // Level 9 (Blender models)
+        HouseWindow, PlankFence, ChainFence, ArrowSign,                                     // Level 9 (built here)
+        KeyRack, PinnedPapers, KnotRail, TapeMachine,                                       // Level 9's three story houses
     }
 
     /// One material per paint; the order is the submesh order of the prop meshes.
-    public enum PropPaint { Metal, Dark, Wood, Cardboard, White, Yellow, Red, Blue, Green, Glow, Water, Void, Fabric, Glass, Static, Ice, Rust, Oil, Warm, NeonPink, NeonCyan, Leaf, Tarp, Concrete, Orange }
+    public enum PropPaint { Metal, Dark, Wood, Cardboard, White, Yellow, Red, Blue, Green, Glow, Water, Void, Fabric, Glass, Static, Ice, Rust, Oil, Warm, NeonPink, NeonCyan, Leaf, Tarp, Concrete, Orange, Brass, Mahogany }
 
     public struct PropSpec
     {
@@ -50,6 +64,9 @@ namespace Backrooms.World
             PropKind.Desk, PropKind.FilingCabinet, PropKind.Ladder, PropKind.Outlet, PropKind.LightSwitch, PropKind.Vent,
             PropKind.ExitSign, PropKind.DoorToNowhere, PropKind.Pipes, PropKind.Bookshelf, PropKind.RollUpDoor, PropKind.Freezer,
             PropKind.Shutter, PropKind.BreakCounter, PropKind.Fridge, PropKind.Whiteboard, PropKind.WindowToWall, PropKind.OddOutlet,
+            PropKind.BreakerPanel, PropKind.SludgePipe,
+            PropKind.OfficeWindow, PropKind.WaterCooler, PropKind.VendingMachine, PropKind.DrinkFountain, PropKind.BadgeReader,
+            PropKind.Sconce,
         };
 
         static readonly System.Collections.Generic.HashSet<PropKind> SolidProps = new System.Collections.Generic.HashSet<PropKind>
@@ -63,7 +80,12 @@ namespace Backrooms.World
             PropKind.LoneDoor, PropKind.StairsToCeiling, PropKind.ServerRack, PropKind.ControlConsole, PropKind.IceBlock, PropKind.Boiler, PropKind.RoundPillar,
             PropKind.Slide, PropKind.Floatie, PropKind.PoolNoodle, PropKind.RubberDuck,
             PropKind.Barrier, PropKind.TarpCar, PropKind.OldCar, PropKind.Scaffold, PropKind.WorkLamp, PropKind.TrafficCone, PropKind.BlockWall,
-            PropKind.Tripod,
+            PropKind.Tripod, PropKind.BoatWreck,
+            PropKind.StreetLamp, PropKind.Mailbox, PropKind.Toilet, PropKind.Bathtub, PropKind.Stove, PropKind.SwingSet, PropKind.Grill, PropKind.WheelieBin,
+            PropKind.HouseWindow, PropKind.PlankFence, PropKind.ChainFence,
+            PropKind.Generator, PropKind.Transformer, PropKind.Conveyor, PropKind.ConveyorMotor, PropKind.Plinth, PropKind.BarFence,
+            PropKind.WaterCooler, PropKind.VendingMachine,
+            PropKind.CageElevator, PropKind.Gramophone, PropKind.MahjongTable, PropKind.HotelBed,
         };
 
         public static bool IsWallProp(PropKind k) => WallProps.Contains(k);
@@ -177,6 +199,30 @@ namespace Backrooms.World
                         Box(p, PropPaint.Yellow, 0.05f * i, 0.065f, 0, 0.03f, 0.01f, 0.03f);
                     }
                     break;
+                case PropKind.Glowstick:   // a few unsnapped glowsticks, rubber-banded
+                    for (int i = 0; i <= v % 3; i++) Box(Sub(0.03f * i, 0, 0, 0, 12 * i, 0), PropPaint.Green, 0, 0.012f, 0, 0.022f, 0.022f, 0.17f);
+                    break;
+                case PropKind.Repellent:   // a spray can: dull green, white cap, a moth-brown band
+                    Box(p, PropPaint.Green, 0, 0.09f, 0, 0.062f, 0.18f, 0.062f);
+                    Box(p, PropPaint.Rust, 0, 0.1f, 0, 0.064f, 0.05f, 0.064f);
+                    Box(p, PropPaint.Metal, 0, 0.185f, 0, 0.05f, 0.012f, 0.05f);
+                    Box(p, PropPaint.White, 0, 0.21f, 0, 0.034f, 0.035f, 0.034f);
+                    break;
+                case PropKind.Flare:   // a red paper tube with a white cap, on its side
+                    Box(p, PropPaint.Red, 0, 0.02f, 0, 0.036f, 0.036f, 0.24f);
+                    Box(p, PropPaint.White, 0, 0.02f, 0.135f, 0.04f, 0.04f, 0.03f);
+                    break;
+                case PropKind.FirstAid:   // a battered white tin with a red cross
+                    Box(p, PropPaint.White, 0, 0.05f, 0, 0.26f, 0.1f, 0.18f);
+                    Box(p, PropPaint.Red, 0, 0.101f, 0, 0.12f, 0.004f, 0.035f);
+                    Box(p, PropPaint.Red, 0, 0.101f, 0, 0.035f, 0.004f, 0.12f);
+                    break;
+                case PropKind.Exterminator:   // brown glass bottle, red cap, hand-written label
+                    Box(p, PropPaint.Rust, 0, 0.09f, 0, 0.07f, 0.18f, 0.07f);
+                    Box(p, PropPaint.Rust, 0, 0.2f, 0, 0.03f, 0.05f, 0.03f);
+                    Box(p, PropPaint.Red, 0, 0.235f, 0, 0.035f, 0.02f, 0.035f);
+                    Box(p, PropPaint.White, 0, 0.09f, 0.036f, 0.05f, 0.06f, 0.004f);
+                    break;
                 case PropKind.Crate:
                     Box(p, PropPaint.Wood, 0, 0.45f, 0, 0.9f, 0.9f, 0.9f);
                     Box(p, PropPaint.Dark, 0, 0.45f, 0, 0.92f, 0.08f, 0.92f);
@@ -278,8 +324,9 @@ namespace Backrooms.World
             Box(PropPaint.White, 0.5f, 1.03f, 0.02f, 0.06f, 2.06f, 0.04f);
             Box(PropPaint.White, -0.5f, 1.03f, 0.02f, 0.06f, 2.06f, 0.04f);
             Box(PropPaint.White, 0, 2.08f, 0.02f, 1.06f, 0.06f, 0.04f);
-            Box(open ? PropPaint.Void : PropPaint.Rust, 0, 1.02f, 0.004f, 0.9f, 2.04f, 0.006f);
-            if (open) Box(PropPaint.Warm, 0.43f, 1.02f, 0.006f, 0.03f, 1.9f, 0.004f);   // light round the edge
+            // The opening stands a little proud of the wall, so a chair rail or baseboard never shows across it.
+            Box(open ? PropPaint.Void : PropPaint.Rust, 0, 1.02f, 0.025f, 0.9f, 2.04f, 0.006f);
+            if (open) Box(PropPaint.Warm, 0.43f, 1.02f, 0.03f, 0.03f, 1.9f, 0.004f);   // light round the edge
         }
 
         /// Seven-segment digits (and '.' / '-') centred at `at` in the frame `p`.

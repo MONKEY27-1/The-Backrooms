@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
   id: 3
   displayName: "Level 3 \xB7 Electrical Station"
-  credit: Based on "Level 3 - Electrical Station", https://backrooms-wiki.wikidot.com/level-3 , original by u/M654z, rewritten by Natedagreat563. Licensed CC BY-SA 3.0. Adapted for this game.
+  credit: Based on "Level 3 - Electrical Station", https://backrooms-wiki.wikidot.com/level-3 , original by u/M654z, rewritten twice by Natedagreat563. Licensed CC BY-SA 3.0. Adapted for this game.
   generator: 1
   staticLevel: {fileID: 0}
   baseDrift: 0
@@ -31,55 +31,49 @@ MonoBehaviour:
     featureChance: 0.22
     pitChance: 0
     manilaChance: 0
-    deadLights: 0.22
-    blackoutChance: 0.15
+    deadLights: 0.25
+    blackoutChance: 0.12
     redChance: 0
-    exitChance: 0.28
-    propDensity: 0.045
-    glitchChance: 0.18
+    exitChance: 0.25
+    propDensity: 0.02
+    glitchChance: 0.1
     props:
     - kind: 9
-      weight: 4
-    - kind: 68
       weight: 3
-    - kind: 69
-      weight: 2
-    - kind: 70
-      weight: 2
-    - kind: 10
-      weight: 2
-    - kind: 60
-      weight: 1.5
     - kind: 16
       weight: 1.5
     - kind: 15
       weight: 1
-    - kind: 8
-      weight: 1
+    - kind: 3
+      weight: 1.5
     - kind: 6
       weight: 1
-    - kind: 3
-      weight: 2
-    - kind: 19
-      weight: 2
+    - kind: 60
+      weight: 1
+    - kind: 10
+      weight: 1
     exits:
     - kind: 1
       target: 4
-      weight: 3
+      weight: 2
     - kind: 1
       target: 2
-      weight: 1.8
+      weight: 1.5
     - kind: 3
       target: 5
-      weight: 0.6
+      weight: 0.8
   districts:
     kinds:
     - kind: 23
-      weight: 6
-    - kind: 4
+      weight: 5
+    - kind: 26
+      weight: 2
+    - kind: 27
       weight: 1.5
+    - kind: 28
+      weight: 1.2
     roomHeight: {x: 2.6, y: 3.2}
-    wallHeight: 6.4
+    wallHeight: 8
     darkRoomChance: 0.15
     curiosities: 0.4
     pitFieldChance: 0.02
@@ -91,23 +85,24 @@ MonoBehaviour:
     floorGlow: 0
     wikiZones: 0
     markedExits: 1
-  wall: {fileID: 2100000, guid: e8285fbcc8b48f44083de0c795647342, type: 2}
+  wall: {fileID: 2100000, guid: 933c6f39207e1f84998e51a6b16ac8d3, type: 2}
   floor: {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
   ceiling: {fileID: 2100000, guid: e6d47fa76fa2f2f47b094f8e0cc7f804, type: 2}
   wallpapers:
-  - {fileID: 2100000, guid: e8285fbcc8b48f44083de0c795647342, type: 2}
   - {fileID: 2100000, guid: 933c6f39207e1f84998e51a6b16ac8d3, type: 2}
+  - {fileID: 2100000, guid: e8285fbcc8b48f44083de0c795647342, type: 2}
   - {fileID: 2100000, guid: 919055b56f273a54aae94fcce8bdc371, type: 2}
+  - {fileID: 2100000, guid: fce67fdf7d38c684e902bd8a96215248, type: 2}
   carpets:
   - {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
   ceilings:
   - {fileID: 2100000, guid: e6d47fa76fa2f2f47b094f8e0cc7f804, type: 2}
   waterHeight: 0
   zoneWater: 0
-  lightColor: {r: 1, g: 0.88, b: 0.65, a: 1}
-  lightIntensity: 1.25
+  lightColor: {r: 1, g: 0.82, b: 0.58, a: 1}
+  lightIntensity: 1.3
   lightRange: 6.5
-  ambient: {r: 0.12, g: 0.1, b: 0.08, a: 1}
-  fogColor: {r: 0.18, g: 0.14, b: 0.1, a: 1}
-  fogDensity: 0.045
-  humVolume: 0.35
+  ambient: {r: 0.07, g: 0.06, b: 0.05, a: 1}
+  fogColor: {r: 0.13, g: 0.105, b: 0.08, a: 1}
+  fogDensity: 0.04
+  humVolume: 0.25

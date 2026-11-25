@@ -38,6 +38,11 @@ namespace Backrooms.World
         {
             if (ModelLibrary.TryBuild(prop, mesh, ceiling)) return true;   // a Blender-made model, when there is one
             if (BuildGarage(prop, mesh, ceiling)) return true;
+            if (BuildLevel3(prop, mesh, ceiling)) return true;
+            if (BuildLevel4(prop, mesh, ceiling)) return true;
+            if (BuildLevel5(prop, mesh, ceiling)) return true;
+            if (BuildLevel7(prop, mesh, ceiling)) return true;
+            if (BuildLevel9(prop, mesh, ceiling)) return true;
             var p = prop.Pose;
             int v = prop.Variant;
             void Box(Matrix4x4 m, PropPaint paint, float cx, float cy, float cz, float sx, float sy, float sz) =>

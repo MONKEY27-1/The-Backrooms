@@ -31,44 +31,44 @@ MonoBehaviour:
     featureChance: 0.22
     pitChance: 0
     manilaChance: 0
-    deadLights: 0.6
+    deadLights: 0.05
     blackoutChance: 0.08
     redChance: 0
-    exitChance: 0.2
-    propDensity: 0.035
+    exitChance: 0
+    propDensity: 0.06
     glitchChance: 0.12
-    props:
-    - kind: 86
-      weight: 2
-    - kind: 85
-      weight: 2
-    - kind: 82
-      weight: 2
-    - kind: 4
-      weight: 3
-    - kind: 45
-      weight: 2
-    - kind: 19
-      weight: 2
-    - kind: 15
-      weight: 1
-    - kind: 16
-      weight: 1
-    exits:
-    - kind: 1
-      target: 0
-      weight: 1
-    - kind: 4
-      target: 8
-      weight: 1.5
+    props: []
+    exits: []
   districts:
     kinds:
+    - kind: 0
+      weight: 6.5
     - kind: 1
-      weight: 3.5
+      weight: 0.15
+    - kind: 2
+      weight: 0.15
+    - kind: 5
+      weight: 1.1
+    - kind: 3
+      weight: 2.2
     - kind: 4
-      weight: 2
+      weight: 2.3
     - kind: 6
-      weight: 1.5
+      weight: 1.8
+    - kind: 7
+      weight: 0.04
+    - kind: 8
+      weight: 0.06
+    - kind: 9
+      weight: 0.04
+    - kind: 10
+      weight: 0.03
+    - kind: 11
+      weight: 0.03
+    - kind: 12
+      weight: 0.03
+    - kind: 14
+      weight: 0.9
     roomHeight: {x: 2.6, y: 3.2}
     wallHeight: 6.4
     darkRoomChance: 0.02
@@ -86,20 +86,36 @@ MonoBehaviour:
   floor: {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
   ceiling: {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
   wallpapers:
+  - {fileID: 2100000, guid: e3834dc0e1d44df4288f5d66d246fee8, type: 2}
+  - {fileID: 2100000, guid: 04c3859711b2fdd418b5e9754f488c3b, type: 2}
+  - {fileID: 2100000, guid: 6b8fce2f78cc7fb49980be2d5a994d8c, type: 2}
+  - {fileID: 2100000, guid: b281618a90448d24b94ad36f0df0d04c, type: 2}
+  - {fileID: 2100000, guid: 631b38132ae04e347b651975cc535903, type: 2}
+  - {fileID: 2100000, guid: ff98e780cab28b940947eb79470899c6, type: 2}
+  - {fileID: 2100000, guid: 19a4792563fedf84ab4ac365956ea9cf, type: 2}
   - {fileID: 2100000, guid: fce67fdf7d38c684e902bd8a96215248, type: 2}
-  - {fileID: 2100000, guid: 6902aabc1d2db2b448d66db2895909f2, type: 2}
-  - {fileID: 2100000, guid: 933c6f39207e1f84998e51a6b16ac8d3, type: 2}
+  - {fileID: 2100000, guid: 893aa69cd7ff3cc46900e50dafa2b68a, type: 2}
   carpets:
-  - {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
-  - {fileID: 2100000, guid: 297c5527b224bb645a4d6f6327cd91c0, type: 2}
+  - {fileID: 2100000, guid: 46d8794968a3b204589165d72c62b844, type: 2}
+  - {fileID: 2100000, guid: 940b28fbbd912d344b9e95ff8160c974, type: 2}
+  - {fileID: 2100000, guid: 5b6d8afb2bbbb5d408b000453792c849, type: 2}
+  - {fileID: 2100000, guid: c826637a07cdfda4c87d6563fef4a220, type: 2}
+  - {fileID: 2100000, guid: b674e5864275c6d4980a42970abe087d, type: 2}
+  - {fileID: 2100000, guid: 844a351a1bbb3bb4d98fc817ca96569a, type: 2}
+  - {fileID: 2100000, guid: 6789fd1b019886245bfe01cc74532089, type: 2}
+  - {fileID: 2100000, guid: d3bf88106225a8046bde1dcbe735919d, type: 2}
+  - {fileID: 2100000, guid: 6b7806e4347c9234bb6341b00414b6a4, type: 2}
+  - {fileID: 2100000, guid: 53115b8f0deb60540a79c7d168c53a92, type: 2}
+  - {fileID: 2100000, guid: e6c5f178684448a41b9155396d55e015, type: 2}
   ceilings:
-  - {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  - {fileID: 2100000, guid: a34277188383c8642b3b909a2f4367a8, type: 2}
+  - {fileID: 2100000, guid: fce67fdf7d38c684e902bd8a96215248, type: 2}
   waterHeight: 0
   zoneWater: 0
   lightColor: {r: 1, g: 0.68, b: 0.28, a: 1}
-  lightIntensity: 1.4
+  lightIntensity: 4.5
   lightRange: 16
-  ambient: {r: 0.03, g: 0.035, b: 0.05, a: 1}
-  fogColor: {r: 0.04, g: 0.05, b: 0.08, a: 1}
-  fogDensity: 0.03
+  ambient: {r: 0.008, g: 0.0095, b: 0.014, a: 1}
+  fogColor: {r: 0.2, g: 0.17, b: 0.13, a: 1}
+  fogDensity: 0.045
   humVolume: 0.03

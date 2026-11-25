@@ -90,9 +90,37 @@ namespace Backrooms.Player
 
         /// Rummaging in the bag: half speed, no sprinting or jumping.
         public bool Encumbered { get; set; }
+        /// Until this time you wade at half speed (Level 3's sludge sets it every frame you stand in it).
+        public float SlowedUntil { get; set; }
+        /// How fast your breath goes under water (Level 7: the diving gear halves it, the pressure of the deep raises it).
+        public float BreathRate { get; set; } = 1f;
+
+        /// Knocked to the floor (a Hound's maul): no moving, the view drops and tilts, then you get up.
+        public float KnockedUntil { get; private set; }
+        float knockRoll;
+
+        float smotheredUntil;
+        /// Something over your face: air goes instead of coming back.
+        public bool Smothered => Time.time < smotheredUntil;
+        public void Smother(float air)
+        {
+            smotheredUntil = Time.time + 0.2f;
+            if (Meta.Difficulty.SurvivalEnabled) Breath = Mathf.Max(0f, Breath - air);
+        }
+
+        /// Dragged along the floor (a Clump reeling you in).
+        public void Pull(Vector3 delta) { if (body != null && body.enabled) body.Move(delta); }
+
+        public void KnockDown(float seconds, float roll = 0f)
+        {
+            KnockedUntil = Time.time + seconds;
+            knockRoll = roll != 0f ? roll : Random.Range(18f, 30f) * (Random.value < 0.5f ? -1f : 1f);
+            landDip = 0.25f;
+        }
 
         public bool Sliding => sliding > 0f;
         public bool Vaulting => vaultT < 1f;
+        public float VaultProgress => vaultT;
         public bool Climbing => Time.time - ladderSeen < 0.15f;
         public bool IsSeated { get; private set; }
         Seat seatedAt;
@@ -258,7 +286,8 @@ namespace Backrooms.Player
             if (settings.invertY) delta.y = -delta.y;
             transform.Rotate(0f, delta.x, 0f);
             pitch = Mathf.Clamp(pitch - delta.y, -85f, 85f);
-            cameraPivot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            knockRoll = Time.time < KnockedUntil ? knockRoll : Mathf.MoveTowards(knockRoll, 0f, Time.deltaTime * 40f);
+            cameraPivot.localRotation = Quaternion.Euler(pitch, 0f, knockRoll + limpRoll);
         }
 
         /// Crouching lets you through the low doorways copy drift leaves behind. You can't stand up under a low ceiling.
@@ -323,7 +352,9 @@ namespace Backrooms.Player
                 grounded = false;
             }
 
-            float speed = (Crouching ? crouchSpeed : running ? sprintSpeed : walkSpeed) * hop * (Encumbered ? 0.5f : 1f);
+            bool limping = status != null && status.Limping;
+            float limpSpeedMult = limping ? (running ? 0.65f : 0.78f) : 1f;
+            float speed = (Crouching ? crouchSpeed : running ? sprintSpeed : walkSpeed) * hop * (Encumbered ? 0.5f : 1f) * (Time.time < SlowedUntil ? 0.5f : 1f) * (Time.time < KnockedUntil ? 0f : 1f) * limpSpeedMult;
             if (Swimming) speed = walkSpeed * (Underwater ? 0.85f : 0.65f) * (swimFast ? 1.7f : 1f);
             Vector3 target = (transform.right * input.x + transform.forward * input.y) * speed;
             if (Sliding)
@@ -341,8 +372,9 @@ namespace Backrooms.Player
             {
                 // Rise and dive cancel each other; otherwise settle just under the surface with a slow drift.
                 bool rising = jump.IsPressed(), diving = HasSwimControl && crouch.IsPressed();
-                if (rising && !diving) verticalVelocity = 4.2f;
-                else if (diving && !rising) verticalVelocity = -diveSpeed;
+                float kick = sprint.IsPressed() ? 1.7f : 1f;   // sprint to dive and surface faster
+                if (rising && !diving) verticalVelocity = 4.2f * Mathf.Lerp(1f, kick, 0.6f);
+                else if (diving && !rising) verticalVelocity = -diveSpeed * kick;
                 else
                 {
                     float want = WaterLevel - eye * 0.62f + Mathf.Sin(Time.time * 1.25f) * 0.045f;
@@ -358,7 +390,7 @@ namespace Backrooms.Player
             // Air runs out whenever the eyes are under water, including while walking on a submerged gallery.
             if (Underwater && HasSwimControl && Meta.Difficulty.SurvivalEnabled)
             {
-                Breath = Mathf.Max(0f, Breath - Time.deltaTime / swimBreathSeconds);
+                Breath = Mathf.Max(0f, Breath - Time.deltaTime / swimBreathSeconds * BreathRate);
                 if (Breath < 0.25f && !lowBreathWarned)
                 {
                     lowBreathWarned = true;
@@ -378,7 +410,7 @@ namespace Backrooms.Player
             else
             {
                 if (!Meta.Difficulty.SurvivalEnabled) Breath = 1f;
-                else Breath = Mathf.MoveTowards(Breath, 1f, Time.deltaTime / breathRecoverySeconds);
+                else if (!Smothered) Breath = Mathf.MoveTowards(Breath, 1f, Time.deltaTime / breathRecoverySeconds);
                 if (Breath > 0.5f) lowBreathWarned = false;
                 Drowning = false;
                 drowningTimer = 0f;
@@ -488,6 +520,14 @@ namespace Backrooms.Player
         void TrackFall()
         {
             float y = transform.position.y;
+            // Water catches you: swimming or diving is never a fall (a deep dive used to count as falling out of the world).
+            if (Swimming || y < WaterLevel)
+            {
+                airTop = y;
+                FallDistance = 0f;
+                wasGrounded = false;
+                return;
+            }
             if (!body.isGrounded)
             {
                 if (wasGrounded) airTop = y;
@@ -499,6 +539,7 @@ namespace Backrooms.Player
                 float drop = airTop - y;
                 FallDistance = 0f;
                 if (drop > 0.5f) Landed?.Invoke(drop);
+                landDip = Mathf.Min(0.06f, Mathf.Max(0f, drop - 0.2f) * 0.03f);   // a short knee-bend on landing
             }
             wasGrounded = body.isGrounded;
         }
@@ -511,17 +552,27 @@ namespace Backrooms.Player
             float previous = stepPhase;
             stepPhase += speed * Time.deltaTime / (running ? sprintStepLength : stepLength) * Mathf.PI;
 
+            bool limping = status != null && status.Limping;
+            float limpWave = Mathf.Sin(stepPhase * 0.5f);
+            float limpDip = limping ? Mathf.Max(0f, limpWave) * 0.05f * Mathf.Clamp01(speed / walkSpeed) : 0f;
+            limpRoll = limping ? limpWave * 2.4f * Mathf.Clamp01(speed / walkSpeed) : 0f;
+
             // One footstep per half wave of the bob: the foot lands when the head is lowest. Crouching is quieter.
             if (Mathf.Floor(stepPhase / Mathf.PI) > Mathf.Floor(previous / Mathf.PI))
             {
-                footstepSource.pitch = Random.Range(0.92f, 1.08f);
-                footstepSource.PlayOneShot(steps[Random.Range(0, steps.Length)], footstepVolume * Meta.AudioMix.Effects * (running ? 1.3f : Crouching ? 0.4f : 1f));
+                bool heavyStep = limping && limpWave > 0f;
+                footstepSource.pitch = heavyStep ? Random.Range(0.82f, 0.95f) : Random.Range(0.92f, 1.08f);
+                footstepSource.PlayOneShot(steps[Random.Range(0, steps.Length)], footstepVolume * Meta.AudioMix.Effects * (running ? 1.3f : Crouching ? 0.4f : 1f) * (heavyStep ? 1.25f : 1f));
                 if (WetFloor) footstepSource.PlayOneShot(Audio.ProceduralAudio.Squelch(), footstepVolume * Meta.AudioMix.Effects * 0.45f * (Crouching ? 0.5f : 1f));
             }
 
-            eye = Mathf.MoveTowards(eye, Crouching ? crouchEyeHeight : eyeHeight, Time.deltaTime * 3f);
+            eye = Time.time < KnockedUntil ? Mathf.MoveTowards(eye, 0.4f, Time.deltaTime * 6f) : Mathf.MoveTowards(eye, Crouching ? crouchEyeHeight : eyeHeight, Time.deltaTime * 3f);
             float bob = (Meta.GameSettings.Current.headBob ? Meta.GameSettings.Current.effects : 0f) * bobAmount * Mathf.Abs(Mathf.Sin(stepPhase)) * Mathf.Clamp01(speed / walkSpeed);
-            cameraPivot.localPosition = new Vector3(0f, eye + bob, 0f);
+            landDip *= Mathf.Exp(-Time.deltaTime * 9f);
+            float dip = Meta.GameSettings.Current.headBob ? landDip : 0f;
+            cameraPivot.localPosition = new Vector3(limping ? limpWave * 0.015f : 0f, eye + bob - dip - limpDip, 0f);
         }
+
+        float landDip, limpRoll;
     }
 }

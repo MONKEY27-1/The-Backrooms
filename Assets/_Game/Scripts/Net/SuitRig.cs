@@ -1,3 +1,4 @@
+using Backrooms.Player;
 using UnityEngine;
 
 namespace Backrooms.Net
@@ -19,6 +20,9 @@ namespace Backrooms.Net
         Vector3 hipsRest;
         float phase, crouch, run, moving, sit;
         bool ready, ragdoll;
+        float killPose;
+        ArmChain actionLeft, actionRight;
+        readonly HandDriver handLeft = new HandDriver(), handRight = new HandDriver();
 
         void Awake()
         {
@@ -34,6 +38,8 @@ namespace Backrooms.Net
             lFore = Find("LeftForeArm"); rFore = Find("RightForeArm");
             ready = hips.T != null && lThigh.T != null && rThigh.T != null && lArm.T != null && rArm.T != null;
             if (hips.T != null) hipsRest = hips.T.localPosition;
+            actionLeft = new ArmChain(transform, "Left", space.forward, space.up);
+            actionRight = new ArmChain(transform, "Right", space.forward, space.up);
         }
 
         Bone Find(string name)
@@ -100,9 +106,51 @@ namespace Backrooms.Net
             float look = Mathf.Clamp(-pitchUp, -70f, 70f) - lean;
             Set(neck, X(lean + look * 0.3f));
             Set(head, X(lean + look));
+            ApplyKillPose();
+        }
+
+        /// Layer a restrained death struggle over the current locomotion pose; called by the replicated kill event.
+        public void KillPose(Backrooms.Creatures.CreatureKind kind, float intensity)
+        {
+            killPose = Mathf.Clamp01(intensity);
+            if (!ready || ragdoll) return;
+            float headTurn = kind == Backrooms.Creatures.CreatureKind.SkinStealer || kind == Backrooms.Creatures.CreatureKind.Smiler ? 32f : -20f;
+            Set(spine, X(18f * killPose));
+            Set(head, X(-15f * killPose) * Quaternion.AngleAxis(headTurn * killPose, Vector3.up));
+            Set(lArm, X(-105f * killPose) * Quaternion.AngleAxis(35f * killPose, Vector3.forward));
+            Set(rArm, X(-125f * killPose) * Quaternion.AngleAxis(-32f * killPose, Vector3.forward));
+            Set(lFore, X(-70f * killPose));
+            Set(rFore, X(-95f * killPose));
+        }
+
+        void ApplyKillPose()
+        {
+            if (killPose <= 0f || !ready || ragdoll) return;
+            Set(spine, X(18f * killPose));
+            Set(head, X(-15f * killPose));
+            Set(lArm, X(-105f * killPose) * Quaternion.AngleAxis(35f * killPose, Vector3.forward));
+            Set(rArm, X(-125f * killPose) * Quaternion.AngleAxis(-32f * killPose, Vector3.forward));
+            Set(lFore, X(-70f * killPose));
+            Set(rFore, X(-95f * killPose));
         }
 
         public void EnableRagdoll() => ragdoll = true;
+
+        /// The same item and movement poses as the local first-person arms, layered over the walk cycle. Only
+        /// the small pose ID and its start time cross the network; each client solves these bones locally.
+        public void ApplyHands(int id, float time, bool torch, float cycle)
+        {
+            if (!ready || ragdoll) return;
+            float dt = Time.deltaTime;
+            var r = handRight.Step(Hands.Get(id, time, torch, false, cycle), dt, 11f);
+            var l = handLeft.Step(Hands.Get(id, time, torch, true, cycle), dt, 11f);
+            float eyeHeight = 1.6f - 0.3f * crouch - 0.55f * sit;
+            Vector3 Target(Hands.Pose p) => space.TransformPoint(p.Pos + Vector3.up * eyeHeight);
+            Vector3 Direction(Vector3 v) => space.TransformDirection(v);
+            var pole = new Vector3(0.6f, -1f, -0.3f);
+            actionRight.Solve(Target(r), Direction(r.Fingers), Direction(r.Dorsal), Direction(pole), r.Curl, r.Weight);
+            actionLeft.Solve(Target(l), Direction(l.Fingers), Direction(l.Dorsal), Direction(new Vector3(-pole.x, pole.y, pole.z)), l.Curl, l.Weight);
+        }
 
         /// A gesture layered over a settled idle pose. Animate establishes the base body every frame first.
         public void ApplyEmote(int id, float time)

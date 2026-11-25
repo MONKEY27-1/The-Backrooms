@@ -12,8 +12,8 @@ namespace Backrooms.Game
         public string Label => Drink ? "Drink from the bottle" : "Eat a slice of cake";
     }
 
-    /// Level Fun =) (after the Backrooms Wiki's Level Fun; the model is hand-made for this game). Until the
-    /// Partygoers arrive with the creature phase, the party itself is what's wrong: music and laughter that are
+    /// Level Fun =) (after the Backrooms Wiki's Level Fun; the model is hand-made for this game). Besides
+    /// the Partygoers (FearDirector), the party itself is what's wrong: music and laughter that are
     /// always somewhere else, balloons that drift closer whenever you look away, smiles on walls you just turned
     /// from, and food you shouldn't eat. Some of the exit signs are real.
     public sealed class PartyLevel : MonoBehaviour
@@ -59,6 +59,30 @@ namespace Backrooms.Game
             // The food.
             foreach (var c in info.Cakes) Food(c, false);
             foreach (var c in info.Bottles) Food(c, true);
+
+            // Road flares someone left behind.
+            for (int i = 0; i < 5; i++)
+            {
+                var l = info.Lights[(int)(WorldHash.Value(worldSeed, i, 1, 0xF1A) * info.Lights.Count) % info.Lights.Count];
+                float floor = float.MaxValue;
+                foreach (var h in Physics.RaycastAll(l, Vector3.down, 8f, ~0, QueryTriggerInteraction.Ignore)) floor = Mathf.Min(floor, h.point.y);
+                if (floor == float.MaxValue) continue;
+                var at = new Vector3(l.x, floor, l.z);
+                int id = Pickup.IdAt(worldSeed, at);
+                if (world.IsPicked != null && world.IsPicked(id)) continue;
+                var go = new GameObject("Flare");
+                go.transform.position = at;
+                var flare = new BoxMeshBuilder(at, world.Paints.Length);
+                PropLibrary.Build(new PropSpec { Kind = PropKind.Flare, Pose = Matrix4x4.Translate(at) }, flare, 3f);
+                go.AddComponent<MeshFilter>().sharedMesh = flare.ToMesh("Flare");
+                go.AddComponent<MeshRenderer>().sharedMaterials = world.Paints;
+                var grab = go.AddComponent<SphereCollider>();
+                grab.isTrigger = true; grab.radius = 0.35f; grab.center = Vector3.up * 0.15f;
+                var pick = go.AddComponent<Pickup>();
+                pick.Kind = PropKind.Flare;
+                pick.Id = id;
+                spawned.Add(go);
+            }
 
             // The party you can hear but never reach.
             for (int i = 0; i < 2; i++)

@@ -30,6 +30,161 @@ namespace Backrooms.Audio
             return hum;
         }
 
+        static AudioClip machine, hiss, whisper, birds, doorClick, surf;
+
+        /// Level 6's way out: waves breaking somewhere below, a slow surge and wash every few seconds. Loops.
+        public static AudioClip Surf()
+        {
+            if (surf != null) return surf;
+            const float seconds = 12f;
+            int n = (int)(Rate * seconds), fade = Rate / 2;
+            var data = new float[n];
+            var rng = new System.Random(707);
+            float lp = 0f, lp2 = 0f;
+            for (int i = 0; i < n; i++)
+            {
+                float t = (float)i / Rate;
+                float noise = (float)(rng.NextDouble() * 2 - 1);
+                lp += 0.08f * (noise - lp);
+                lp2 += 0.01f * (lp - lp2);
+                float phase = Mathf.Repeat(t / 4f, 1f);   // a wave every four seconds: a surge, a crash, a long wash out
+                float env = phase < 0.25f ? Mathf.Pow(phase / 0.25f, 2f) : Mathf.Exp(-(phase - 0.25f) * 3.5f);
+                data[i] = (lp * (0.25f + 0.75f * env) + lp2 * 2.5f) * 0.6f;
+            }
+            for (int i = 0; i < fade; i++) { float k = (float)i / fade; data[i] = data[i] * k + data[n - fade + i] * (1f - k); }
+            var trimmed = new float[n - fade];
+            System.Array.Copy(data, trimmed, n - fade);
+            surf = AudioClip.Create("Surf", n - fade, 1, Rate, false);
+            surf.SetData(trimmed, 0);
+            return surf;
+        }
+
+        /// A hotel door: the latch clicking and a soft knock of wood as it swings.
+        public static AudioClip DoorClick()
+        {
+            if (doorClick != null) return doorClick;
+            var data = new float[(int)(Rate * 0.35f)];
+            var rng = new System.Random(55);
+            for (int i = 0; i < data.Length; i++)
+            {
+                float t = (float)i / Rate;
+                float latch = (float)(rng.NextDouble() * 2 - 1) * Mathf.Exp(-t * 180f) * 0.7f;
+                float knock = Mathf.Sin(2f * Mathf.PI * 140f * t) * Mathf.Exp(-(t - 0.08f) * 30f) * (t > 0.08f ? 0.5f : 0f);
+                float creak = Mathf.Sin(2f * Mathf.PI * (380f + 120f * Mathf.Sin(t * 30f)) * t) * Mathf.Exp(-t * 9f) * 0.06f;
+                data[i] = latch + knock + creak;
+            }
+            doorClick = AudioClip.Create("Door click", data.Length, 1, Rate, false);
+            doorClick.SetData(data, 0);
+            return doorClick;
+        }
+
+        /// Outside a Level 4 window: a summer afternoon. Chirps and trills from a few birds over a soft breeze. Loops.
+        public static AudioClip Birds()
+        {
+            if (birds != null) return birds;
+            var data = new float[Rate * 8];
+            var rng = new System.Random(4);
+            float wind = 0f;
+            for (int i = 0; i < data.Length; i++)
+            {
+                wind += 0.002f * ((float)(rng.NextDouble() * 2 - 1) - wind);
+                data[i] = wind * 0.6f;
+            }
+            for (int call = 0; call < 26; call++)
+            {
+                int start = rng.Next(0, data.Length - Rate / 2);
+                float baseF = 2600f + (float)rng.NextDouble() * 2200f, len = 0.05f + (float)rng.NextDouble() * 0.12f;
+                int notes = 1 + rng.Next(0, 5);
+                float phase = 0f;
+                for (int n = 0; n < notes; n++)
+                {
+                    int s0 = start + (int)(n * (len + 0.04f) * Rate);
+                    for (int k = 0; k < (int)(len * Rate) && s0 + k < data.Length; k++)
+                    {
+                        float t = (float)k / (len * Rate);
+                        float f = baseF * (1f + 0.25f * Mathf.Sin(t * Mathf.PI) * (n % 2 == 0 ? 1f : -1f));
+                        phase += 2f * Mathf.PI * f / Rate;
+                        data[s0 + k] += Mathf.Sin(phase) * Mathf.Sin(t * Mathf.PI) * 0.18f;
+                    }
+                }
+            }
+            birds = AudioClip.Create("Birds", data.Length, 1, Rate, false);
+            birds.SetData(data, 0);
+            return birds;
+        }
+
+        /// Level 3's machinery: a 50 Hz generator drone, the knock of pistons and a rattling housing.
+        /// Two seconds hold whole cycles of every part, so it loops cleanly.
+        public static AudioClip Machine()
+        {
+            if (machine != null) return machine;
+            var data = new float[Rate * 2];
+            var rng = new System.Random(50);
+            float rattle = 0f;
+            for (int i = 0; i < data.Length; i++)
+            {
+                float t = (float)i / Rate;
+                float w = 2f * Mathf.PI * 50f * t;
+                float s = 0.45f * Mathf.Sin(w) + 0.3f * Mathf.Sin(2f * w + 0.4f) + 0.12f * Mathf.Sin(4f * w) + 0.06f * Mathf.Sin(7f * w);
+                float knock = Mathf.Pow(Mathf.Max(0f, Mathf.Sin(2f * Mathf.PI * 12.5f * t)), 24f);   // 12.5 Hz piston beat
+                rattle += 0.2f * ((float)(rng.NextDouble() * 2 - 1) - rattle);
+                s += knock * 0.5f + rattle * (0.15f + knock * 0.6f);
+                data[i] = s * 0.42f;
+            }
+            machine = AudioClip.Create("Machine", data.Length, 1, Rate, false);
+            machine.SetData(data, 0);
+            return machine;
+        }
+
+        /// Scalding sludge: a frying hiss with pops. The ends are faded into each other so it loops.
+        public static AudioClip Hiss()
+        {
+            if (hiss != null) return hiss;
+            var data = new float[Rate * 2];
+            var rng = new System.Random(33);
+            float hp = 0f, last = 0f;
+            for (int i = 0; i < data.Length; i++)
+            {
+                float n = (float)(rng.NextDouble() * 2 - 1);
+                hp = 0.85f * (hp + n - last);   // high-passed: hiss, not rumble
+                last = n;
+                float pop = rng.NextDouble() < 0.0006 ? 1f : 0f;
+                data[i] = hp * 0.22f + pop * 0.6f;
+            }
+            int fade = Rate / 4;
+            for (int i = 0; i < fade; i++) { float k = (float)i / fade; data[i] = data[i] * k + data[data.Length - fade + i] * (1f - k); }
+            System.Array.Resize(ref data, data.Length - fade);
+            hiss = AudioClip.Create("Hiss", data.Length, 1, Rate, false);
+            hiss.SetData(data, 0);
+            return hiss;
+        }
+
+        /// A hotspot: breathy, voice-shaped noise rising and falling like someone crying a room away.
+        public static AudioClip Whisper()
+        {
+            if (whisper != null) return whisper;
+            var data = new float[Rate * 6];
+            var rng = new System.Random(911);
+            float bp1 = 0f, bp1v = 0f, bp2 = 0f, bp2v = 0f;
+            for (int i = 0; i < data.Length; i++)
+            {
+                float t = (float)i / Rate;
+                float n = (float)(rng.NextDouble() * 2 - 1);
+                // Two resonances that wander like vowels (a crude formant filter over breath noise).
+                float f1 = 500f + 250f * Mathf.Sin(t * 2.3f), f2 = 1400f + 500f * Mathf.Sin(t * 1.7f + 1f);
+                float c1 = 2f * Mathf.Sin(Mathf.PI * f1 / Rate), c2 = 2f * Mathf.Sin(Mathf.PI * f2 / Rate);
+                bp1 += c1 * bp1v; bp1v += c1 * (n - bp1 - 0.25f * bp1v);
+                bp2 += c2 * bp2v; bp2v += c2 * (n - bp2 - 0.25f * bp2v);
+                // Sobs: bursts of 0.3-0.8 s, then silence; the whole thing loops after six seconds.
+                float phrase = Mathf.Sin(Mathf.PI * t / 6f * 5f);
+                float env = Mathf.Max(0f, phrase) * (0.6f + 0.4f * Mathf.Sin(t * 9f));
+                data[i] = (bp1 * 0.6f + bp2 * 0.4f) * env * 0.35f * Mathf.Sin(Mathf.PI * t / 6f);
+            }
+            whisper = AudioClip.Create("Whisper", data.Length, 1, Rate, false);
+            whisper.SetData(data, 0);
+            return whisper;
+        }
+
         static AudioClip squelch;
 
         /// A wet carpet underfoot: a soft, low suck of water.

@@ -120,6 +120,7 @@ namespace Backrooms.World
                 foreach (var r in damp) if (MinePos(new Vector3(r.center.x, 0f, r.center.y))) L.Damp.Add(new SurfaceQuad { Area = r, Height = 0.004f, FacingUp = true });
                 foreach (var p in planks) if (MinePos(p.Pose.GetColumn(3))) L.Planks.Add(p);
                 foreach (var s in slopes) if (MinePos((s.A + s.B) / 2f)) L.Slopes.Add(s);
+                foreach (var s in specials) if (MinePos(s.Pose.GetColumn(3))) L.Specials.Add(s);
                 return L;
             }
 

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Backrooms.Meta;
 using Backrooms.Net;
 using Backrooms.Player;
@@ -29,7 +29,7 @@ namespace Backrooms.Game
         {
             spectator = player.GetComponent<Spectator>() ?? player.gameObject.AddComponent<Spectator>();
             spectator.Friends = LivingFriends;
-            coop.Handle(DiedMsg, (from, r) => OnPlayerDied(from));
+            coop.Handle(DiedMsg, (from, r) => { r.ReadValueSafe(out int cause); OnPlayerDied(from, cause); });
             coop.Handle(DieMsg, (from, r) => DieHere());
             coop.Handle(ThroughMsg, (from, r) => GoneThrough());
             coop.Handle(SayMsg, (from, r) => { r.ReadValueSafe(out string text); hud?.Flash(text, 4f); });
@@ -38,7 +38,8 @@ namespace Backrooms.Game
             {
                 r.ReadValueSafe(out Vector3 position);
                 r.ReadValueSafe(out Quaternion rotation);
-                DeathRagdoll.Spawn(position, rotation);
+                r.ReadValueSafe(out int cause);
+                DeathRagdoll.Spawn(position, rotation, default, CauseName(cause));
             });
             coop.Handle(HardcoreRosterMsg, (from, r) =>
             {
@@ -55,7 +56,8 @@ namespace Backrooms.Game
                 if (playerInfo != null) playerInfo.Alive = !dead;
                 if (dead && spectator != null && !spectator.Watching) DieHere();
                 else if (!dead && spectator != null && spectator.Watching) ReviveHere();
-                if (dead) hud?.Flash($"Dead · party progress {Mathf.Clamp(wait, 0, 3)}/3 levels", 5f);
+                CoopAvatar.Mine?.SetDiedServer(dead);
+                if (dead) hud?.Flash($"Dead Â· party progress {Mathf.Clamp(wait, 0, 3)}/3 levels", 5f);
             });
         }
 
@@ -72,6 +74,7 @@ namespace Backrooms.Game
         {
             throughClients.Clear();
             pendingTarget = null;
+            Players.Local?.ResetDeath();
             if (HardcoreCoop)
             {
                 EnsureHardcoreLists();
@@ -83,7 +86,7 @@ namespace Backrooms.Game
                     if (localPlayer != null) localPlayer.Alive = meIndex < 0;
                     if (meIndex >= 0 && spectator != null && !spectator.Watching) DieHere();
                     else if (meIndex < 0 && spectator != null && spectator.Watching) ReviveHere();
-                    if (meIndex >= 0) hud?.Flash($"Dead · party progress {Mathf.Clamp(save.hardcoreWait[meIndex], 0, 3)}/3 levels", 5f);
+                    if (meIndex >= 0) hud?.Flash($"Dead Â· party progress {Mathf.Clamp(save.hardcoreWait[meIndex], 0, 3)}/3 levels", 5f);
                     return;
                 }
                 SyncDeadFromSave();
@@ -98,6 +101,7 @@ namespace Backrooms.Game
                         save.hardcoreWait.RemoveAt(i);
                         ulong client = ClientFor(id);
                         if (client != ulong.MaxValue) deadClients.Remove(client);
+                        if (CoopAvatar.All.TryGetValue(client, out var revivedAvatar) && revivedAvatar != null) revivedAvatar.SetDiedServer(false);
                         if (client == MyId) ReviveHere();
                         else if (client != ulong.MaxValue) coop.Send(ReviveMsg, client, w => { });
                     }
@@ -108,6 +112,7 @@ namespace Backrooms.Game
                 return;
             }
             deadClients.Clear();
+            if (Coop.IsOwner) foreach (var avatar in CoopAvatar.All.Values) avatar?.SetDiedServer(false);
             if (spectator != null && spectator.Watching) spectator.End();
             var me = Players.Local;
             if (me != null) me.Alive = true;
@@ -120,8 +125,9 @@ namespace Backrooms.Game
         /// You died here (caught, or fell). In co-op the owner decides what that means for everyone.
         void DieInCoop()
         {
-            if (Coop.IsOwner) { DieHere(); OnPlayerDied(MyId); }
-            else { DieHere(); coop.Send(DiedMsg, NetworkManager.ServerClientId, w => { }); }
+            int cause = Players.Local != null && Players.Local.DeathCause.HasValue ? (int)Players.Local.DeathCause.Value : -1;
+            if (Coop.IsOwner) { DieHere(); OnPlayerDied(MyId, cause); }
+            else { DieHere(); coop.Send(DiedMsg, NetworkManager.ServerClientId, w => w.WriteValueSafe(cause)); }
         }
 
         void ReviveHere()
@@ -185,8 +191,13 @@ namespace Backrooms.Game
                         deadClients.Add(a.OwnerClientId);
                         hardcorePlayerIds[a.OwnerClientId] = a.PlayerId;
                         if (a.Agent != null) a.Agent.Alive = false;
+                        a.SetDiedServer(true);
                     }
-                    else if (a.Agent != null) a.Agent.Alive = true;
+                    else
+                    {
+                        if (a.Agent != null) a.Agent.Alive = true;
+                        a.SetDiedServer(false);
+                    }
                 }
             int ownerIndex = save.hardcoreDead.IndexOf(CoopSession.MyPlayerId);
             if (ownerIndex >= 0) { deadClients.Add(MyId); hardcorePlayerIds[MyId] = CoopSession.MyPlayerId; }
@@ -200,7 +211,7 @@ namespace Backrooms.Game
             StartCoroutine(Transition(ShowMenu));
         }
 
-        /// Become a spectator (Easy/Normal) until the group moves on — the owner sends a checkpoint if needed.
+        /// Become a spectator (Easy/Normal) until the group moves on â€” the owner sends a checkpoint if needed.
         void DieHere()
         {
             if (spectator == null || spectator.Watching) return;
@@ -209,19 +220,26 @@ namespace Backrooms.Game
             hud?.Flash("You're dead. You'll come back when someone finds the way out. Click to watch another friend.", 6f);
         }
 
-        void OnPlayerDied(ulong who)
+        static string CauseName(int cause) => cause >= 0 && System.Enum.IsDefined(typeof(Backrooms.Creatures.CreatureKind), cause) ? ((Backrooms.Creatures.CreatureKind)cause).ToString() : null;
+
+        void OnPlayerDied(ulong who, int cause = -1)
         {
             if (!Coop.IsOwner || deadClients.Contains(who)) return;
             deadClients.Add(who);
+            string causeName = CauseName(cause);
             Vector3 deathPosition = who == MyId ? player.transform.position
                 : CoopAvatar.All.TryGetValue(who, out var fallen) && fallen != null ? fallen.transform.position : player.transform.position;
             Quaternion deathRotation = who == MyId ? player.transform.rotation
                 : CoopAvatar.All.TryGetValue(who, out var turned) && turned != null ? turned.transform.rotation : player.transform.rotation;
-            DeathRagdoll.Spawn(deathPosition, deathRotation);
+            DeathRagdoll.Spawn(deathPosition, deathRotation, default, causeName);
             foreach (ulong client in coop.Net.ConnectedClientsIds)
-                if (client != MyId) coop.Send(RagdollMsg, client, w => { w.WriteValueSafe(deathPosition); w.WriteValueSafe(deathRotation); });
+                if (client != MyId) coop.Send(RagdollMsg, client, w => { w.WriteValueSafe(deathPosition); w.WriteValueSafe(deathRotation); w.WriteValueSafe(cause); });
             throughClients.Remove(who);
-            if (CoopAvatar.All.TryGetValue(who, out var deadAvatar) && deadAvatar != null && deadAvatar.Agent != null) deadAvatar.Agent.Alive = false;
+            if (CoopAvatar.All.TryGetValue(who, out var deadAvatar) && deadAvatar != null)
+            {
+                if (deadAvatar.Agent != null) deadAvatar.Agent.Alive = false;
+                deadAvatar.SetDiedServer(true);
+            }
             if (HardcoreCoop)
             {
                 EnsureHardcoreLists();
@@ -307,7 +325,7 @@ namespace Backrooms.Game
             if (justArrived || Time.time >= nextGatherSay)
             {
                 nextGatherSay = Time.time + 6f;
-                SayAll($"A way out. {near} of {alive} here — everyone alive has to gather at it.");
+                SayAll($"A way out. {near} of {alive} here â€” everyone alive has to gather at it.");
             }
             return false;
         }

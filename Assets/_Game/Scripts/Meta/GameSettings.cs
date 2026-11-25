@@ -14,12 +14,14 @@ namespace Backrooms.Meta
         public bool fullscreen = true, vsync = true;
         public int quality = 2;                 // 0 Low, 1 Medium, 2 High, 3 Ultra (ray-traced GI where the GPU can)
         public float fov = 70f, brightness;     // brightness in stops, -1..1
+        public int aspect;                      // 0 = fill the screen, 1 = 4:3 camcorder frame with black bars
         // Controls
         public float sensitivity = 1f;
         public bool invertY;
         // Comfort
         public bool headBob = true, reduceFlashing, captions = true;
-        public float effects = 1f;              // film grain, chromatic aberration, motion blur, head bob
+        public float effects = 1f;              // the VHS tape, exposure hunting, chromatic aberration, motion blur, head bob
+        public float handheld = 1f;             // the camcorder's handheld sway, 0..1
         // Audio, 0..1
         public float master = 1f, ambience = 1f, sfx = 1f, creatures = 1f, ui = 1f;
     }
@@ -89,7 +91,7 @@ namespace Backrooms.Meta
 
             Get<ColorAdjustments>().postExposure.Override(s.brightness);
             float e = Mathf.Clamp01(s.effects);
-            Get<FilmGrain>().intensity.Override(0.32f * e);
+            Get<FilmGrain>().intensity.Override(0f);   // the tape has its own noise (Look.VhsSignal)
             Get<ChromaticAberration>().intensity.Override(0.07f * e);
             Get<MotionBlur>().intensity.Override(0.15f * e);
 
@@ -98,8 +100,15 @@ namespace Backrooms.Meta
             gi.enable.Override(q >= 2);
             gi.tracing.Override(q >= 3 && RayTracingAvailable ? RayCastingMode.RayTracing : RayCastingMode.RayMarching);
             Get<ScreenSpaceReflection>().enabled.Override(q >= 1);
-            Get<ScreenSpaceAmbientOcclusion>().intensity.Override(q == 0 ? 0.8f : 1.3f);
-            Get<ContactShadows>().enable.Override(q >= 1);
+            // Graphics revamp: corners and the floor under things read darker, as they do on camera. A little AO on
+            // direct light too, so lit corners aren't perfectly flat.
+            var ao = Get<ScreenSpaceAmbientOcclusion>();
+            ao.intensity.Override(q == 0 ? 1f : 1.7f);
+            ao.radius.Override(q == 0 ? 1f : 1.6f);
+            ao.directLightingStrength.Override(q == 0 ? 0f : 0.25f);
+            var contact = Get<ContactShadows>();
+            contact.enable.Override(q >= 1);
+            contact.length.Override(0.4f);
             Get<HDShadowSettings>().maxShadowDistance.Override(q == 0 ? 25f : q == 1 ? 35f : q == 2 ? 45f : 60f);
         }
     }

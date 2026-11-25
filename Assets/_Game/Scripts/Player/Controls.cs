@@ -15,16 +15,23 @@ namespace Backrooms.Player
         public static readonly InputAction Bag = Make("Bag", "<Keyboard>/tab", "<Gamepad>/select");
         public static readonly InputAction Interact = Make("Interact", "<Keyboard>/e", "<Gamepad>/buttonWest");
         public static readonly InputAction Logbook = Make("Logbook", "<Keyboard>/j", "<Gamepad>/dpad/up");
+        public static readonly InputAction Chalk = Make("Chalk", "<Keyboard>/g", "<Gamepad>/dpad/down");   // Level 6: mark the wall
+        public static readonly InputAction ThrowLight = Make("Throw glowstick", "<Keyboard>/q", "<Gamepad>/rightShoulder");
+        public static readonly InputAction ThrowBottle = Make("Throw Exterminator", "<Keyboard>/x", "<Gamepad>/leftShoulder");
+        public static readonly InputAction FirstAid = Make("Use first-aid kit", "<Keyboard>/h", "<Gamepad>/rightStickPress");
+        public static readonly InputAction Repellent = Make("Spray moth repellent", "<Keyboard>/z", "<Gamepad>/dpad/right");
+        public static readonly InputAction Flare = Make("Throw flare", "<Keyboard>/t");   // on a pad: the Exterminator button, when you have none of those
+        public static readonly InputAction SetDown = Make("Set down almond water", "<Keyboard>/b", "<Gamepad>/dpad/left");
         public static readonly InputAction DrinkPad = Make("Drink", "<Gamepad>/buttonWest");
         public static readonly InputAction BatteryPad = Make("Battery", "<Gamepad>/buttonNorth");
-        static readonly InputAction[] Tools = { Flashlight, Camcorder, Bag, Interact, Logbook };
+        static readonly InputAction[] Tools = { Flashlight, Camcorder, Bag, Interact, Logbook, Chalk, ThrowLight, ThrowBottle, FirstAid, Repellent, SetDown, Flare };
 
         /// Turns every tool action on. The editor here enters Play mode without reloading scripts, and stopping Play
         /// switches code-made actions off, so they're switched back on at the start of every session.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         public static void EnableAll()
         {
-            foreach (var a in new[] { Flashlight, Camcorder, Bag, Interact, Logbook, DrinkPad, BatteryPad })
+            foreach (var a in new[] { Flashlight, Camcorder, Bag, Interact, Logbook, Chalk, ThrowLight, ThrowBottle, FirstAid, Repellent, SetDown, Flare, DrinkPad, BatteryPad })
                 if (!a.enabled) a.Enable();
         }
 

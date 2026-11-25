@@ -11,6 +11,12 @@ namespace Backrooms.World
 
         public string Target;
 
+        /// Something other than a trigger volume sends you somewhere (Level 4's windows).
+        public static void Fire(string target, Vector3 at) => ExitEntered?.Invoke(target, at);
+
+        /// Like falling into a pit: back to your checkpoint (Level 5's thirteenth floor).
+        public static void FirePit() => PitEntered?.Invoke();
+
         void OnTriggerEnter(Collider other)
         {
             if (!other.TryGetComponent<CharacterController>(out _)) return;

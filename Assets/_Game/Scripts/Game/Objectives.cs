@@ -11,12 +11,15 @@ namespace Backrooms.Game
         public string Target, LockedText;
         public bool Locked = true;
         public Transform Leaf;
+        public GameObject LampLocked, LampOpen;   // Level 4's badge reader: red, then green
         GameObject trigger;
 
         public void Unlock()
         {
             if (!Locked && trigger != null) return;
             Locked = false;
+            if (LampLocked != null) LampLocked.SetActive(false);
+            if (LampOpen != null) LampOpen.SetActive(true);
             if (Leaf != null) Leaf.localRotation = Quaternion.Euler(0f, 100f, 0f);
             foreach (var c in GetComponents<Collider>()) c.enabled = false;
             trigger = new GameObject("Exit to " + Target);
@@ -45,6 +48,9 @@ namespace Backrooms.Game
             ["0"] = new Goal { Text = "Find the pages of a surveyor's map", Item = "map page", Plural = "map pages", Count = 3, Door = "1", Hint = "Locked. Someone has written on it: BRING THE MAP.", Colour = PropPaint.White },
             ["1"] = new Goal { Text = "Find a fuse for the stairwell door", Item = "fuse", Plural = "fuses", Count = 1, Door = "2", Hint = "No power. The panel next to it is missing a fuse.", Colour = PropPaint.Yellow },
             ["2"] = new Goal { Text = "Find the wheels for the steam door's valves", Item = "valve wheel", Plural = "valve wheels", Count = 2, Door = "1", Hint = "Two bare valve stems. They need their wheels.", Colour = PropPaint.Red },
+            ["3"] = new Goal { Text = "Find fuses for the freight lift's breaker panel", Item = "fuse", Plural = "fuses", Count = 3, Door = "4", Hint = "No power to the lift. The breaker panel beside it is missing three fuses.", Colour = PropPaint.Yellow },
+            ["4"] = new Goal { Text = "Find two employee keycards for the stairwell door", Item = "keycard", Plural = "keycards", Count = 2, Door = "5", Hint = "The badge reader beside the stairwell door blinks red. ACCESS DENIED.", Colour = PropPaint.Blue },
+            ["5"] = new Goal { Text = "Find the key to your room", Item = "room key", Plural = "room keys", Count = 1, Door = "6", Hint = "Locked. Your key is somewhere in the hotel.", Colour = PropPaint.Brass },
             ["37"] = new Goal { Text = "Find the keys to the staff door", Item = "brass key", Plural = "brass keys", Count = 2, Door = "0", Hint = "Two keyholes. Locked.", Colour = PropPaint.Yellow },
             ["0.3"] = new Goal { Text = "Find fuses to restart the heater door", Item = "heater fuse", Plural = "heater fuses", Count = 2, Door = "0", Hint = "Frozen shut. The heater panel is missing its fuses.", Colour = PropPaint.Yellow },
             ["19"] = new Goal { Text = "Find the key to the hatch", Item = "iron key", Plural = "iron keys", Count = 1, Door = "0", Hint = "A padlock, rusted but solid.", Colour = PropPaint.Metal },
@@ -54,6 +60,7 @@ namespace Backrooms.Game
         {
             ["0.2"] = "Get back to the door you came in through, before it all comes down",
             ["-1"] = "Find the pump control room and drain the pool",
+            ["6"] = "Listen. Follow the sound of waves to the stairs down",
             ["188"] = "Find the lit window. Don't look at the shadows. Music means leave.",
             ["fun"] = "Find a way out. Some of the exit signs are real. Don't eat anything.",
             ["9223372036854775807"] = "Find the elevator back to the Lobby; the staircase has no known end",
@@ -78,6 +85,7 @@ namespace Backrooms.Game
             save = s;
             level = levelId;
             Goals.TryGetValue(levelId, out goal);
+            if (levelId == "3") Level3Power.Set(save.goals.Contains("3:done"), false);   // the station's power stays on once you've restored it
             if (goal != null)
             {
                 // Where things are: a pure function of the world and level, measured from where this level was entered.
@@ -102,6 +110,9 @@ namespace Backrooms.Game
             foreach (var g in items.Values) if (g != null) Destroy(g);
             if (door != null) Destroy(door.gameObject);
         }
+
+        /// Level 5: the number on your room's door (and on the key's tag).
+        int MyRoom => DistrictLayout.GoalRoomNumber(WorldHash.LevelSeed(save.worldSeed, "5"));
 
         bool Has(int i) => save.goals.Contains($"{level}:{i}");
         bool Done => save.goals.Contains($"{level}:done");
@@ -180,6 +191,18 @@ namespace Backrooms.Game
                         mesh.AddOrientedBox(p * Matrix4x4.TRS(new Vector3(0f, 0.025f, 0f), Quaternion.Euler(0f, k * 45f, 0f), Vector3.one), new Vector3(0f, 0f, 0.13f), new Vector3(0.1f, 0.03f, 0.03f), (int)PropPaint.Red);
                     mesh.AddOrientedBox(p, new Vector3(0f, 0.025f, 0f), new Vector3(0.04f, 0.04f, 0.04f), (int)PropPaint.Metal);
                     break;
+                case "room key":   // a brass key on a heavy brass tag stamped with your room number
+                    mesh.AddOrientedBox(p, new Vector3(0f, 0.004f, 0f), new Vector3(0.05f, 0.006f, 0.085f), (int)PropPaint.Brass);
+                    mesh.AddOrientedBox(p, new Vector3(0f, 0.005f, 0.075f), new Vector3(0.008f, 0.005f, 0.07f), (int)PropPaint.Brass);
+                    mesh.AddOrientedBox(p, new Vector3(0.008f, 0.005f, 0.105f), new Vector3(0.012f, 0.005f, 0.01f), (int)PropPaint.Brass);
+                    PropLibrary.Label(mesh, p * Matrix4x4.TRS(new Vector3(0f, 0.008f, 0f), Quaternion.Euler(-90f, 0f, 0f), Vector3.one), MyRoom.ToString(), 0.18f);   // face up
+                    break;
+                case "keycard":   // a white employee badge with a blue stripe and a clip
+                    mesh.AddOrientedBox(p, new Vector3(0f, 0.002f, 0f), new Vector3(0.054f, 0.003f, 0.086f), (int)PropPaint.White);
+                    mesh.AddOrientedBox(p, new Vector3(0f, 0.004f, 0.02f), new Vector3(0.055f, 0.002f, 0.018f), (int)PropPaint.Blue);
+                    mesh.AddOrientedBox(p, new Vector3(0f, 0.004f, -0.018f), new Vector3(0.02f, 0.002f, 0.025f), (int)PropPaint.Dark);
+                    mesh.AddOrientedBox(p, new Vector3(0f, 0.004f, 0.05f), new Vector3(0.014f, 0.004f, 0.012f), (int)PropPaint.Metal);
+                    break;
                 case "brass key":
                 case "iron key":
                     mesh.AddOrientedBox(p, new Vector3(0f, 0.01f, 0f), new Vector3(0.025f, 0.012f, 0.1f), (int)goal.Colour);
@@ -212,7 +235,13 @@ namespace Backrooms.Game
             var go = new GameObject("Goal Door");
             go.transform.SetPositionAndRotation(at, pose.rotation);
             var frame = new BoxMeshBuilder(at, streamer.Paints.Length);
-            PropLibrary.BuildMarkedFrame(goal.Door, pose, frame);
+            if (level != "5") PropLibrary.BuildMarkedFrame(goal.Door, pose, frame);
+            if (level == "5") PropLibrary.DoorFrameOnly(pose, frame, true);   // your room: a plain casing, the hotel leaf below
+            else
+            if (level == "4")   // the badge reader by the stairwell door (its lamps are separate, below)
+                PropLibrary.Build(new PropSpec { Kind = PropKind.BadgeReader, Pose = pose * Matrix4x4.Translate(new Vector3(0.78f, 0f, 0f)) }, frame, 3f);
+            if (level == "3")   // the lift's breaker panel, beside the door: three empty fuse holders at the top
+                PropLibrary.Build(new PropSpec { Kind = PropKind.BreakerPanel, Pose = pose * Matrix4x4.Translate(new Vector3(1.25f, 0f, 0f)) }, frame, 3f);
             var mf = new GameObject("Frame");
             mf.transform.SetParent(go.transform, false);
             mf.transform.SetPositionAndRotation(at, Quaternion.identity);
@@ -222,8 +251,13 @@ namespace Backrooms.Game
             hinge.SetParent(go.transform, false);
             hinge.localPosition = new Vector3(-0.45f, 0f, 0.05f);
             var leaf = new BoxMeshBuilder(Vector3.zero, streamer.Paints.Length);
-            leaf.AddOrientedBox(Matrix4x4.identity, new Vector3(0.45f, 1.02f, 0f), new Vector3(0.92f, 2.06f, 0.05f), (int)PropPaint.Metal);
-            leaf.AddOrientedBox(Matrix4x4.identity, new Vector3(0.8f, 1.0f, 0.04f), new Vector3(0.08f, 0.14f, 0.04f), (int)PropPaint.Dark);   // the lock
+            if (level == "5" && ModelLibrary.Add(leaf, "L5DoorLeaf", Matrix4x4.Translate(new Vector3(0.92f, 0f, 0f))))   // a guest room door with your number on it
+                PropLibrary.RoomNumber(leaf, Matrix4x4.Translate(new Vector3(0.46f, 0f, 0f)), MyRoom, 0.034f);
+            else
+            {
+                leaf.AddOrientedBox(Matrix4x4.identity, new Vector3(0.45f, 1.02f, 0f), new Vector3(0.92f, 2.06f, 0.05f), (int)PropPaint.Metal);
+                leaf.AddOrientedBox(Matrix4x4.identity, new Vector3(0.8f, 1.0f, 0.04f), new Vector3(0.08f, 0.14f, 0.04f), (int)PropPaint.Dark);   // the lock
+            }
             hinge.gameObject.AddComponent<MeshFilter>().sharedMesh = leaf.ToMesh("Goal Door Leaf");
             hinge.gameObject.AddComponent<MeshRenderer>().sharedMaterials = streamer.Paints;
             var box = go.AddComponent<BoxCollider>();
@@ -233,6 +267,23 @@ namespace Backrooms.Game
             d.Target = goal.Door;
             d.LockedText = goal.Hint;
             d.Leaf = hinge;
+            if (level == "4")
+            {
+                GameObject Lamp(string name, PropPaint paint)
+                {
+                    var lamp = new GameObject(name);
+                    lamp.transform.SetParent(go.transform, false);
+                    lamp.transform.localPosition = new Vector3(0.78f, 1.29f, 0.034f);
+                    var lb = new BoxMeshBuilder(Vector3.zero, streamer.Paints.Length);
+                    lb.AddOrientedBox(Matrix4x4.identity, Vector3.zero, new Vector3(0.014f, 0.014f, 0.004f), (int)paint);
+                    lamp.AddComponent<MeshFilter>().sharedMesh = lb.ToMesh(name);
+                    lamp.AddComponent<MeshRenderer>().sharedMaterials = streamer.Paints;
+                    return lamp;
+                }
+                d.LampLocked = Lamp("Reader lamp red", PropPaint.Red);
+                d.LampOpen = Lamp("Reader lamp green", PropPaint.NeonCyan);
+                d.LampOpen.SetActive(false);
+            }
             if (Done) d.Unlock();
             return d;
         }
@@ -258,6 +309,7 @@ namespace Backrooms.Game
             }
             save.goals.Add($"{level}:done");
             door?.Unlock();
+            if (level == "3") Level3Power.Set(true, true);
             hud?.Flash("Developer: objective complete.", 3f);
         }
 #endif
@@ -274,19 +326,65 @@ namespace Backrooms.Game
                 save.goals.Add($"{level}:done");
                 var st = player.GetComponent<PlayerStatus>();
                 if (st != null) { st.AlmondWater++; st.Batteries++; }
-                hud.Flash("That's everything. The marked door will open now. (Found some water and a battery too.)", 6f);
+                hud.Flash((level == "5" ? $"A brass key on a heavy tag: ROOM {MyRoom}. Somewhere in the hotel, a lock turns. (Found some water and a battery too.)" :
+                          level == "4" ? "Second keycard. Somewhere a badge reader clicks and turns green. (Found some water and a battery too.)" :
+                          level == "3" ? "The last fuse clicks home. Power floods the station, and the lift door opens. (Found some water and a battery too.)"
+                                       : "That's everything. The marked door will open now. (Found some water and a battery too.)") + ExitHint(), 8f);
                 if (door != null) door.Unlock();
+                if (level == "3") Level3Power.Set(true, true);
             }
         }
+
+        List<Vector3> wires;   // Level 9's line
+        static float Flat(Vector3 v) => new Vector2(v.x, v.z).magnitude;
 
         static string Capital(string s) => char.ToUpper(s[0]) + s.Substring(1);
 
         void Update()
         {
             if (hud == null) return;
+            hud.Waypoint = goal != null && Done ? ExitPos() : (Vector3?)null;
+            if (level == "7")   // dive to the light on the drowned mountain
+            {
+                var cave = OceanLayout.CaveMouth(WorldHash.LevelSeed(save.worldSeed, "7"));
+                var toCave = cave - player.transform.position;
+                float depth = Mathf.Max(0f, OceanLayout.OceanWaterLevel - player.transform.position.y);
+                float flat = new Vector2(toCave.x, toCave.z).magnitude;
+                string gear = Level7Events.HasGear ? "" : "   (Fort Surrender had a diving helmet)";
+                hud.Waypoint = cave;
+                hud.Objective = $"Dive to the light on the drowned mountain  {Compass(toCave)}, about {Mathf.Max(10, Mathf.RoundToInt(flat / 10f) * 10)} m, 88 m down   (you: {Mathf.RoundToInt(depth)} m){gear}";
+                return;
+            }
+            if (level == "9")   // pole to pole, to wherever the wires go
+            {
+                wires ??= SuburbsLayout.Line(WorldHash.LevelSeed(save.worldSeed, "9"));
+                int near = 0;
+                for (int i = 1; i < wires.Count; i++)
+                    if (Flat(wires[i] - player.transform.position) < Flat(wires[near] - player.transform.position)) near = i;
+                int next = Mathf.Min(near + 1, wires.Count - 1);
+                var to = wires[next] - player.transform.position;
+                hud.Waypoint = wires[next] + Vector3.up * 2f;
+                hud.Objective = $"{(next == wires.Count - 1 ? "The wires end at that house. Go in" : "Follow the power line")}   {Compass(to)}, about {Mathf.Max(5, Mathf.RoundToInt(Flat(to) / 5f) * 5)} m";
+                return;
+            }
+            if (level == "8" && Level8Events.Instance != null)   // the 9th Road, marker by marker
+            {
+                var road = Level8Events.Instance;
+                var to = road.Next - player.transform.position;
+                bool last = road.Reached >= road.Markers - 2;
+                hud.Waypoint = road.Next;
+                hud.Objective = $"{(last ? "The road ends in a shaft. Drop into it" : road.Reached < 0 ? "Find the first post of the 9th Road" : $"Walk the 9th Road: marker {road.Reached + 1} of {road.Markers - 2}")}   {Compass(to)}, about {Mathf.Max(5, Mathf.RoundToInt(to.magnitude / 5f) * 5)} m";
+                return;
+            }
             if (goal == null)
             {
                 hud.Objective = TextOnly.TryGetValue(level, out var t) && !(level == "-1" && PoolSwitch.Pulled) ? t : "";
+                return;
+            }
+            if (Done && level == "5")
+            {
+                var to = ExitPos() - player.transform.position;
+                hud.Objective = to.magnitude < 6f ? $"Room {MyRoom}. Your key fits." : $"Find room {MyRoom}   {Compass(to)}, about {Mathf.Max(10, Mathf.RoundToInt(to.magnitude / 10f) * 10)} m";
                 return;
             }
             if (Done) { hud.Objective = door != null && Vector3.Distance(door.transform.position, player.transform.position) < 40f ? $"The door to {goal.Door} is open" : $"Find the marked door to {goal.Door} (it's open now)"; return; }
@@ -303,6 +401,15 @@ namespace Backrooms.Game
             }
             string where = bestD < 6f ? "right here" : $"{Compass(best - p)}, about {Mathf.Max(10, Mathf.RoundToInt(bestD / 10f) * 10)} m";
             hud.Objective = $"{goal.Text}  ({Found}/{goal.Count})   {where}";
+        }
+
+        /// The open exit: the door itself once it's built, else the middle of its chunk.
+        Vector3 ExitPos() => door != null ? door.transform.position : new Vector3((doorChunk.x + 0.5f) * MazeLayout.ChunkSize, 0f, (doorChunk.z + 0.5f) * MazeLayout.ChunkSize);
+
+        string ExitHint()
+        {
+            var to = ExitPos() - player.transform.position;
+            return $"\nThe way out is open: {Compass(to)}, about {Mathf.Max(10, Mathf.RoundToInt(new Vector2(to.x, to.z).magnitude / 10f) * 10)} m. Follow the compass.";
         }
 
         static string Compass(Vector3 d)

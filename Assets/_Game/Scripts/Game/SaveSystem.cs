@@ -18,6 +18,8 @@ namespace Backrooms.Game
         public uint worldSeed;
         public string levelId = "0";
         public int arrivalX, arrivalZ;                       // checkpoint chunk in the current level
+        public string shrineLevel;                           // a Level 3 Sanctum you rested in: respawn there instead
+        public float shrineX, shrineY, shrineZ;
         public List<string> visited = new List<string>();    // level ids, for the level log and achievements
         public float playSeconds;
         public string lastPlayed;                            // ISO date
@@ -29,7 +31,9 @@ namespace Backrooms.Game
 
         // Survival (Phase 4). 1 = full.
         public float thirst = 1f, sanity = 1f, flashlightBattery = 1f, camcorderBattery = 1f;
-        public int almondWater = 1, batteries = 1;
+        public int almondWater = 1, batteries = 1, glowsticks, exterminators, firstAid, repellent, flares;
+        public float infection;   // the Wretched Cycle
+        public float health = 1f;
         public List<int> picked = new List<int>();   // pickups already taken, so they stay gone
         public List<string> logbook = new List<string>();   // notes you've read: title, newline, text
         public List<string> goals = new List<string>();     // level goals: "level:itemIndex" and "level:done"

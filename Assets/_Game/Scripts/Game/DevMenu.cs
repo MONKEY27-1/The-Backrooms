@@ -26,6 +26,7 @@ namespace Backrooms.Game
         Func<bool> menuBlocked;
         Canvas canvas;
         bool fly, freecam;
+        int deathTestKind;
         Camera cameraView;
         Vector3 freecamPosition;
         float freecamYaw, freecamPitch;
@@ -109,7 +110,22 @@ namespace Backrooms.Game
             Ui.Heading(list, "CREATURES / EVENTS");
             Ui.Button(list, "Spawn a Faceling", SpawnResident, 26);
             Ui.Button(list, "Spawn a Skin Stealer", SpawnSkinStealer, 26);
-            Ui.Button(list, "Spawn a Partygoer", SpawnPartyGoer, 26);
+            Ui.Button(list, "Spawn a Partygoer pack", SpawnPartyGoer, 26);
+            Ui.Button(list, "Spawn a party trap", () => { if (CanControlShared && PartyScenes.Instance != null) Say(PartyScenes.Instance.Place(Players.Local) ? "Somewhere near, a party is waiting." : "No room for one here."); }, 26);
+            Ui.Button(list, "Spawn Wretches", () => { if (CanControlShared) session.DevSpawnCreature(CreatureKind.Wretch); }, 26);
+            Ui.Button(list, "Spawn a Wretch mass", () => { if (CanControlShared) session.DevSpawnCreature(CreatureKind.WretchMass); }, 26);
+            Ui.Button(list, "Infect me", () => { if (status != null) status.Infection = Mathf.Min(0.95f, status.Infection + 0.3f); }, 26);
+            Ui.Button(list, "+3 flares", () => { if (status != null) status.Flares += 3; }, 26);
+            Ui.Button(list, "Spawn a moth swarm", () => { if (CanControlShared) session.DevSpawnCreature(CreatureKind.MothSwarm); }, 26);
+            Ui.Button(list, "Spawn harmless moths", () => { if (CanControlShared) session.DevSpawnCreature(CreatureKind.MothMales); }, 26);
+            Ui.Button(list, "Spawn a moth hive (Level 5)", () => { if (CanControlShared) session.DevSpawnCreature(CreatureKind.MothHive); }, 26);
+            Ui.Button(list, "Spawn a Clump", () => { if (CanControlShared) session.DevSpawnCreature(CreatureKind.Clump); else Say("Only the host can spawn shared creatures."); }, 26);
+            Ui.Button(list, "Spawn a Hound pack", () => { if (CanControlShared) session.DevSpawnCreature(CreatureKind.Hound); else Say("Only the host can spawn shared creatures."); }, 26);
+            Ui.Heading(list, "DEATH SEQUENCE TESTS");
+            Ui.Cycler(list, "Creature", () => GoreDeath.Describe(GoreDeath.TestKinds[deathTestKind], 0), () => deathTestKind = (deathTestKind + 1) % GoreDeath.TestKinds.Count);
+            Ui.Button(list, "Play death variant 1 (checkpoint follows)", () => TestDeathSequence(0), 26);
+            Ui.Button(list, "Play death variant 2 (checkpoint follows)", () => TestDeathSequence(1), 26);
+            Ui.Button(list, "Check death sequence catalog", () => Say(GoreDeath.CheckCatalog(out var error) ? "Death catalog passed." : "Death catalog failed: " + error), 26);
             Ui.Button(list, "Start Smiler hunt", StartHunt, 26);
             Ui.Button(list, "Clear creatures", ClearCreatures, 26);
             Ui.Button(list, "Trigger random environmental event", TriggerEvent, 26);
@@ -141,6 +157,17 @@ namespace Backrooms.Game
 
         bool CanControlShared => !Coop.Active || Coop.IsOwner;
         void Say(string message) => hud?.Flash(message, 3f);
+
+        void TestDeathSequence(int variant)
+        {
+            var victim = Players.Local;
+            if (victim == null || !victim.Alive || victim.Dying) { Say("Death test needs a living player."); return; }
+            var kind = GoreDeath.TestKinds[Mathf.Clamp(deathTestKind, 0, GoreDeath.TestKinds.Count - 1)];
+            var at = player.transform.position + player.transform.forward * 0.7f;
+            float yaw = player.transform.eulerAngles.y;
+            Close();
+            victim.PlayRemoteDeathPose(kind, variant, at, yaw);
+        }
 
         void ToggleFly(bool enabled)
         {
@@ -232,8 +259,13 @@ namespace Backrooms.Game
             var catalog = getCatalog?.Invoke();
             var save = getSave?.Invoke();
             if (!CanControlShared || catalog == null || save == null) { Say("Only the host can change levels."); return; }
-            int i = catalog.levels.FindIndex(l => l.id == save.levelId);
-            string next = catalog.levels[(i + 1 + catalog.levels.Count) % catalog.levels.Count].id;
+            // In level-number order (-1, 0, 0.2, 0.3, 1 ... 9, 19, 37, 188, the endless staircase), named levels last.
+            var ordered = new List<string>();
+            foreach (var l in catalog.levels) if (l != null) ordered.Add(l.id);
+            double Number(string id) => double.TryParse(id, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : double.MaxValue;
+            ordered.Sort((a, b) => { int c = Number(a).CompareTo(Number(b)); return c != 0 ? c : string.CompareOrdinal(a, b); });
+            int i = ordered.IndexOf(save.levelId);
+            string next = ordered[(i + 1 + ordered.Count) % ordered.Count];
             session.DevGoTo(next, Vector2Int.zero);
         }
 

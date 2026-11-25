@@ -332,6 +332,7 @@ namespace Backrooms.Player
             string discovery = Recognize();
             byte[] jpeg = CaptureJpeg(cameraView);
             if (jpeg == null) { hud?.Flash("The camera failed to capture an image.", 3f); return; }
+            Creatures.SmilerLook.CameraFlash();   // the flash catches what the dark hides
             var save = getSave();
             save.photos ??= new List<PhotoData>();
             save.photographed ??= new List<string>();

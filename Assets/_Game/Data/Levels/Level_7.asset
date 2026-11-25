@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
   id: 7
   displayName: "Level 7 \xB7 Thalassophobia"
-  credit: Based on "Level 7 - Thalassophobia", https://backrooms-wiki.wikidot.com/level-7 , original by Bart0nius and M654z, rewritten by Bart0nius. Licensed CC BY-SA 3.0. Adapted for this game.
+  credit: Based on "Level 7 - Thalassophobia", https://backrooms-wiki.wikidot.com/level-7 , originals by Bart0nius and M654z, rewritten twice by Bart0nius. Licensed CC BY-SA 3.0. Adapted for this game.
   generator: 4
   staticLevel: {fileID: 0}
   baseDrift: 0
   style:
-    ceiling: 28.0
+    ceiling: 2.8
     hallChance: 0.12
     pillars: 2
     walkers: {x: 18, y: 50}
@@ -31,40 +31,46 @@ MonoBehaviour:
     featureChance: 0.22
     pitChance: 0
     manilaChance: 0
-    deadLights: 0.4
+    deadLights: 0.05
     blackoutChance: 0.08
     redChance: 0
-    exitChance: 0.15
-    propDensity: 0.012
+    exitChance: 0
+    propDensity: 0.06
     glitchChance: 0.12
-    props:
-    - kind: 76
-      weight: 3
-    - kind: 18
-      weight: 2
-    - kind: 17
-      weight: 2
-    - kind: 9
-      weight: 1.5
-    - kind: 16
-      weight: 1
-    exits:
-    - kind: 4
-      target: 8
-      weight: 3
-    - kind: 2
-      target: 6
-      weight: 1
+    props: []
+    exits: []
   districts:
     kinds:
+    - kind: 0
+      weight: 6.5
     - kind: 1
-      weight: 3.5
+      weight: 0.15
     - kind: 2
-      weight: 2
+      weight: 0.15
+    - kind: 5
+      weight: 1.1
+    - kind: 3
+      weight: 2.2
     - kind: 4
-      weight: 1
+      weight: 2.3
+    - kind: 6
+      weight: 1.8
+    - kind: 7
+      weight: 0.04
+    - kind: 8
+      weight: 0.06
+    - kind: 9
+      weight: 0.04
+    - kind: 10
+      weight: 0.03
+    - kind: 11
+      weight: 0.03
+    - kind: 12
+      weight: 0.03
+    - kind: 14
+      weight: 0.9
     roomHeight: {x: 2.6, y: 3.2}
-    wallHeight: 12
+    wallHeight: 6.4
     darkRoomChance: 0.02
     curiosities: 0.4
     pitFieldChance: 0.02
@@ -76,21 +82,25 @@ MonoBehaviour:
     floorGlow: 0
     wikiZones: 0
     markedExits: 0
-  wall: {fileID: 2100000, guid: 919055b56f273a54aae94fcce8bdc371, type: 2}
-  floor: {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
+  wall: {fileID: 2100000, guid: ff98e780cab28b940947eb79470899c6, type: 2}
+  floor: {fileID: 2100000, guid: 700fb9117075ccf4eaef0fb132028423, type: 2}
   ceiling: {fileID: 2100000, guid: f8be88f316a8d8e4b82e20af0c56201d, type: 2}
   wallpapers:
-  - {fileID: 2100000, guid: 919055b56f273a54aae94fcce8bdc371, type: 2}
+  - {fileID: 2100000, guid: ff98e780cab28b940947eb79470899c6, type: 2}
   carpets:
-  - {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
+  - {fileID: 2100000, guid: 447d2ea74551e2743be7794d5493359b, type: 2}
+  - {fileID: 2100000, guid: c826637a07cdfda4c87d6563fef4a220, type: 2}
+  - {fileID: 2100000, guid: 07d61fd77dba2e041ac33d7014b19aba, type: 2}
+  - {fileID: 2100000, guid: 326620c183cb50b4682a585ac2af539e, type: 2}
   ceilings:
   - {fileID: 2100000, guid: f8be88f316a8d8e4b82e20af0c56201d, type: 2}
-  waterHeight: 4.0
+  - {fileID: 2100000, guid: a958267057ff67a4887b9dc4865fa223, type: 2}
+  waterHeight: 4
   zoneWater: 0
-  lightColor: {r: 0.12, g: 0.35, b: 0.45, a: 1}
-  lightIntensity: 0.4
-  lightRange: 10
-  ambient: {r: 0.02, g: 0.06, b: 0.09, a: 1}
-  fogColor: {r: 0.015, g: 0.07, b: 0.11, a: 1}
-  fogDensity: 0.045
-  humVolume: 0.04
+  lightColor: {r: 0.55, g: 0.75, b: 0.9, a: 1}
+  lightIntensity: 0.8
+  lightRange: 12
+  ambient: {r: 0.05, g: 0.08, b: 0.1, a: 1}
+  fogColor: {r: 0.05, g: 0.07, b: 0.09, a: 1}
+  fogDensity: 0.035
+  humVolume: 0

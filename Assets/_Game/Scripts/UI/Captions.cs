@@ -15,9 +15,10 @@ namespace Backrooms.UI
         float toastUntil;
 
         /// A caption for a sound, e.g. "[footsteps behind you]". Repeats within a couple of seconds are merged.
-        public static void Say(string text)
+        /// `always`: shown even with captions off (a voice in your head, not a sound).
+        public static void Say(string text, bool always = false)
         {
-            if (!GameSettings.Current.captions) return;
+            if (!always && !GameSettings.Current.captions) return;
             if (instance == null) instance = new GameObject("Captions").AddComponent<Captions>();
             instance.Add(text);
         }

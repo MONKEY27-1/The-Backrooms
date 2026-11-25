@@ -54,6 +54,7 @@ namespace Backrooms.World
             ExtraFocus.Clear();
             extraWant.Clear();
             rig?.Clear();
+            ClearDarkPockets();
             theme = null;
             Static = null;
             Blackout = shownBlackout = 0f;
@@ -81,6 +82,7 @@ namespace Backrooms.World
         /// Water surface in the loaded chunk under a world position (false for dry rooms and unloaded chunks).
         public bool TryWaterSurfaceAt(Vector3 position, out float surface)
         {
+            if (theme != null && theme.generator == LevelGenerator.Caves) return CaveWater.TrySurface(position, out surface);   // pools and floods, not a level-wide waterline
             var c = ChunkOf(position);
             if (chunks.TryGetValue(new Vector3Int(c.x, FloorAt(position.y), c.y), out var chunk))
             {
@@ -88,7 +90,7 @@ namespace Backrooms.World
                 for (int i = 0; i < chunk.Water.Count; i++)
                     if (chunk.Water[i].Area.Contains(point))
                     {
-                        surface = chunk.Water[i].Height;
+                        surface = chunk.Water[i].Height + (theme.generator == LevelGenerator.Ocean ? RollingSea.Swell(position.x, position.z) : 0f);
                         return true;
                     }
             }
@@ -110,9 +112,92 @@ namespace Backrooms.World
         /// Distance to the nearest working light; large means you're standing in the dark.
         public float NearestLight => rig != null && Blackout < 0.6f ? rig.NearestDistance : float.MaxValue;
 
+        /// The nearest working light's spot within `range`, or null (moths gather round it).
+        public Vector3? NearestLightPoint(Vector3 p, float range)
+        {
+            if (Blackout >= 0.6f) return null;
+            Vector3? best = null;
+            float bestSq = range * range;
+            foreach (var set in emitterSets)
+                foreach (var e in set)
+                {
+                    if (e.Floor || (pockets.Count > 0 && InDarkPocket(e.Position))) continue;
+                    float dx = e.Position.x - p.x, dz = e.Position.z - p.z, d = dx * dx + dz * dz;
+                    if (d < bestSq) { bestSq = d; best = e.Position; }
+                }
+            return best;
+        }
+
+        /// Flat distance from any spot on this floor to the nearest light panel (Smilers keep to the dark).
+        public float LightDistanceAt(Vector3 p)
+        {
+            if (Blackout >= 0.6f) return float.MaxValue;
+            float best = float.MaxValue;
+            foreach (var set in emitterSets)
+                foreach (var e in set)
+                {
+                    if (pockets.Count > 0 && InDarkPocket(e.Position)) continue;
+                    float dx = e.Position.x - p.x, dz = e.Position.z - p.z, d = dx * dx + dz * dz;
+                    if (d < best) best = d;
+                }
+            return Mathf.Sqrt(best);
+        }
+
         /// The lights die (0 = normal, 1 = black). Set by the fear director; eased here.
         public float Blackout;
         float shownBlackout;
+
+        /// A patch of dead lights around a lurking Smiler: Levels 2 and 3 are lit nearly everywhere, and canon
+        /// keeps Smilers in the dark, so the dark comes with it. The lenses go grey, the lights and hum stop.
+        public sealed class DarkPocket { public Vector3 At; public float Radius; public readonly List<GameObject> Covers = new List<GameObject>(); }
+        readonly List<DarkPocket> pockets = new List<DarkPocket>();
+
+        public DarkPocket AddDarkPocket(Vector3 at, float radius)
+        {
+            var pocket = new DarkPocket { At = at, Radius = radius };
+            foreach (var set in emitterSets)
+                foreach (var e in set)
+                {
+                    float dx = e.Position.x - at.x, dz = e.Position.z - at.z;
+                    if (e.Floor || dx * dx + dz * dz > radius * radius || Mathf.Abs(e.Position.y - at.y) > 5f) continue;
+                    var cover = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    Destroy(cover.GetComponent<Collider>());
+                    cover.name = "Dead Panel";
+                    cover.transform.SetParent(transform, false);
+                    cover.transform.position = e.Position + Vector3.down * 0.02f;
+                    cover.transform.localScale = e.AlongX ? new Vector3(1.04f, 0.015f, 0.54f) : new Vector3(0.54f, 0.015f, 1.04f);
+                    var r = cover.GetComponent<MeshRenderer>();
+                    r.sharedMaterial = catalog.panelDead;
+                    r.shadowCastingMode = ShadowCastingMode.Off;
+                    pocket.Covers.Add(cover);
+                }
+            pockets.Add(pocket);
+            nextLights = 0f;
+            return pocket;
+        }
+
+        public void RemoveDarkPocket(DarkPocket pocket)
+        {
+            if (pocket == null || !pockets.Remove(pocket)) return;
+            foreach (var c in pocket.Covers) if (c != null) Destroy(c);
+            nextLights = 0f;
+        }
+
+        void ClearDarkPockets()
+        {
+            foreach (var k in pockets) foreach (var c in k.Covers) if (c != null) Destroy(c);
+            pockets.Clear();
+        }
+
+        bool InDarkPocket(Vector3 p)
+        {
+            foreach (var k in pockets)
+            {
+                float dx = p.x - k.At.x, dz = p.z - k.At.z;
+                if (dx * dx + dz * dz <= k.Radius * k.Radius && Mathf.Abs(p.y - k.At.y) < 5f) return true;
+            }
+            return false;
+        }
         Material panelLit;   // our own copy, so a blackout never edits the asset
         Material glowLit;    // the attic's orange glow between floorboards
         Material dampMat;    // wet carpet
@@ -142,13 +227,15 @@ namespace Backrooms.World
 
         /// Prop materials (one per PropPaint), for other systems that draw props (the bag).
         public Material[] Paints => paints;
+        /// The level's main wall material (Level 6 builds walls at runtime).
+        public Material WallMaterial => catalog != null && theme != null ? catalog.Resolve(theme, new SurfaceRef(Surface.Wall)) : null;
 
         /// Replaces whatever level is loaded with `level`, fully built around `startChunk` before returning.
         public void Load(LevelTheme level, LevelCatalog shared, uint levelSeed, Vector2Int startChunk)
         {
             if (rig == null)
             {
-                rig = new LightRig(transform, Audio.ProceduralAudio.Hum());
+                rig = new LightRig(transform, Audio.ProceduralAudio.Hum()) { Suppressed = p => pockets.Count > 0 && InDarkPocket(p) };
                 ring = Audio.ProceduralAudio.Ring();
             }
             if (paints == null)
@@ -172,6 +259,7 @@ namespace Backrooms.World
             if (atmosphere == null) atmosphere = Atmosphere.Instance != null ? Atmosphere.Instance : new GameObject("Atmosphere").AddComponent<Atmosphere>();
             atmosphere.Apply(level);
             Blackout = shownBlackout = 0f;
+            ClearDarkPockets();
             ApplyBlackout();
             seed = levelSeed;
             Static = null;
@@ -411,7 +499,7 @@ namespace Backrooms.World
             if (theme.waterHeight > 0f && !theme.zoneWater)
             {
                 const float size = MazeLayout.ChunkSize;
-                layout.Water.Add(new SurfaceQuad { Area = new Rect(cx * size, cz * size, size, size), Height = theme.waterHeight, FacingUp = true });
+                (theme.generator == LevelGenerator.Ocean ? layout.WaterDeep : layout.Water).Add(new SurfaceQuad { Area = new Rect(cx * size, cz * size, size, size), Height = theme.waterHeight, FacingUp = true });   // the open sea gets the dark water
             }
             return layout;
         }
@@ -572,10 +660,16 @@ namespace Backrooms.World
                 materials.Add(catalog.Resolve(theme, s));
                 return i;
             }
+            var solids = layout.Boxes.FindAll(x => x.Solid);   // for the bevel neighbour check
             foreach (var b in layout.Boxes)
             {
+                if (KitDressing.Baseboard(oriented, b, Sub)) continue;   // flat strip -> profiled skirting (Stage C kit)
                 var f = b.Faces;
-                structure.AddBox(b.Box, f,
+                if (KitDressing.Bevels(b)) structure.AddBevelledBox(b.Box, f, KitDressing.Bevel, KitDressing.FreeCorners(b, solids),
+                    (f & BoxMeshBuilder.Faces.PosX) != 0 ? Sub(b.PosX) : 0, (f & BoxMeshBuilder.Faces.NegX) != 0 ? Sub(b.NegX) : 0,
+                    (f & BoxMeshBuilder.Faces.PosY) != 0 ? Sub(b.PosY) : 0, (f & BoxMeshBuilder.Faces.NegY) != 0 ? Sub(b.NegY) : 0,
+                    (f & BoxMeshBuilder.Faces.PosZ) != 0 ? Sub(b.PosZ) : 0, (f & BoxMeshBuilder.Faces.NegZ) != 0 ? Sub(b.NegZ) : 0);
+                else structure.AddBox(b.Box, f,
                     (f & BoxMeshBuilder.Faces.PosX) != 0 ? Sub(b.PosX) : 0, (f & BoxMeshBuilder.Faces.NegX) != 0 ? Sub(b.NegX) : 0,
                     (f & BoxMeshBuilder.Faces.PosY) != 0 ? Sub(b.PosY) : 0, (f & BoxMeshBuilder.Faces.NegY) != 0 ? Sub(b.NegY) : 0,
                     (f & BoxMeshBuilder.Faces.PosZ) != 0 ? Sub(b.PosZ) : 0, (f & BoxMeshBuilder.Faces.NegZ) != 0 ? Sub(b.NegZ) : 0);
@@ -587,6 +681,13 @@ namespace Backrooms.World
                 if (q.Visual) tops.AddHorizontal(q.Area, q.Height, q.FacingUp, q.Rotated, Sub(q.Surface));
                 else structure.AddHorizontal(q.Area, q.Height, q.FacingUp, q.Rotated, Sub(q.Surface));
             foreach (var r in layout.Slopes) structure.AddSlope(r.A, r.B, r.Width, r.Bottom, r.Thickness, Sub(r.Top), Sub(r.Side));
+            // Tile ceilings: T-bar rails (ceiling material, into the non-colliding surfaces) and fixtures (prop paints).
+            var ceilingKit = new BoxMeshBuilder(origin, paints.Length);
+            KitDressing.Ceilings(layout, oriented, ceilingKit, Sub, s => catalog.Resolve(theme, s), WorldHash.Hash(seed, key.x, key.z, key.y));
+            if (ceilingKit.VertexCount > 0) AddMesh(chunk, "Ceiling Fixtures", ceilingKit.ToMesh("Ceiling Fixtures"), paints, false, false);
+            var grime = GrimeDressing.Material != null ? GrimeDressing.Build(layout, origin, s => catalog.Resolve(theme, s), WorldHash.Hash(seed, key.x, key.z, key.y)) : null;
+            if (grime != null) AddMesh(chunk, "Grime", grime, new[] { GrimeDressing.Material }, false, false);
+            GoreDressing.Decorate(chunk.Root.transform, layout, origin, theme, seed, key);
             // One material per submesh each (a mesh with more materials than submeshes draws its last part again).
             if (structure.VertexCount > 0) AddMesh(chunk, "Structure", structure.ToMesh("Structure"), materials.GetRange(0, structure.SubmeshCount).ToArray(), true);
             if (oriented.VertexCount > 0) AddMesh(chunk, "Oriented Surfaces", oriented.ToMesh("Oriented Surfaces"), materials.GetRange(0, oriented.SubmeshCount).ToArray(), false);
@@ -599,6 +700,9 @@ namespace Backrooms.World
                 tread.AddComponent<BoxCollider>().size = b.Size;
             }
             if (tops.VertexCount > 0) AddMesh(chunk, "Ceiling Tops", tops.ToMesh("Ceiling Tops"), materials.GetRange(0, tops.SubmeshCount).ToArray(), false, false);
+
+            foreach (var r in layout.Rocks)
+                if (r.T.Count > 0) AddMesh(chunk, "Rock", r.ToMesh("Rock", origin), new[] { catalog.Resolve(theme, r.Surface) }, r.Collide);
 
             // Props, curiosities and exit doors: solid ones collide, decor doesn't.
             var solid = new BoxMeshBuilder(origin, paints.Length);
@@ -633,6 +737,7 @@ namespace Backrooms.World
             }
             foreach (var exit in layout.Exits)
             {
+                if (Vanishing(exit)) continue;   // built on its own in CreateExit, so it can disappear
                 if (exit.Kind == ExitKind.Door && theme.districts.markedExits) PropLibrary.BuildMarkedExit(exit.Target, exit.Pose, decor);
                 else if (exit.Kind != ExitKind.FlickerWall) PropLibrary.BuildExit(exit.Kind, exit.Pose, decor);
                 if (exit.Target == "fun") PropLibrary.Balloon(exit.Pose, new Vector3(0.36f, 1.0f, 0.06f), new Vector3(0.3f, 1.95f, 0.3f), PropPaint.Red, decor);   // a balloon tied to the handle
@@ -665,7 +770,9 @@ namespace Backrooms.World
                 foreach (var q in layout.Water) water.AddHorizontal(q.Area, q.Height, true, false, 0);
                 AddMesh(chunk, "Water", water.ToMesh("Water"), new[] { catalog.water }, false, false);
             }
-            if (layout.WaterDeep.Count > 0)
+            if (theme.generator == LevelGenerator.Ocean)
+                foreach (var q in layout.WaterDeep) RollingSea.Create(chunk.Root.transform, q, catalog.waterDeep);   // swells, not a flat sheet
+            else if (layout.WaterDeep.Count > 0)
             {
                 var water = new BoxMeshBuilder(origin, 1);
                 foreach (var q in layout.WaterDeep) water.AddHorizontal(q.Area, q.Height, true, false, 0);
@@ -679,6 +786,7 @@ namespace Backrooms.World
             foreach (var r in layout.Readables) Readable.Create(chunk.Root.transform, r, seed, IsPicked);
             foreach (var b in layout.Boards) CreateBoards(chunk, b);
             if (layout.Planks.Count > 0) CreatePlanks(chunk, layout.Planks);
+            foreach (var s in layout.Specials) Level3Power.Create(chunk.Root.transform, s, paints);
             return chunk;
         }
 
@@ -778,7 +886,7 @@ namespace Backrooms.World
                 }
                 else mesh.AddHorizontal(area, p.Position.y, false, false, p.State == FixtureState.Dead ? 1 : 0);
                 if (p.State != FixtureState.Dead && p.Emitter)
-                    chunk.Emitters.Add(new Emitter { Position = p.Position, Range = p.Range, Id = p.Id, Faulty = p.State == FixtureState.Faulty, Red = p.Red, Sick = p.Sick });
+                    chunk.Emitters.Add(new Emitter { Position = p.Position, Range = p.Range, Id = p.Id, Faulty = p.State == FixtureState.Faulty, Red = p.Red, Sick = p.Sick, AlongX = p.AlongX });
             }
             if (mesh.VertexCount > 0) AddMesh(chunk, "Panels", mesh.ToMesh("Panels"), new[] { panelLit, catalog.panelDead, catalog.trims != null && catalog.trims.Length > 0 ? catalog.trims[0] : catalog.panelDead }, false, false);
             if (glow.VertexCount > 0)
@@ -973,6 +1081,15 @@ namespace Backrooms.World
             int id = Pickup.IdAt(seed, at);
             if (WorldHash.Value((uint)id, 57) > Meta.Difficulty.Supplies) return;   // harder saves: some of it was never there
             if (IsPicked != null && IsPicked(id)) return;
+            if (prop.Kind == PropKind.Battery)   // some battery spots hold a throwable instead
+            {
+                float r = WorldHash.Value((uint)id, 91);
+                if (r < 0.06f) prop.Kind = PropKind.Exterminator;
+                else if (r < 0.36f) prop.Kind = PropKind.Glowstick;
+                else if (r < 0.44f) prop.Kind = PropKind.Repellent;
+                else if (r < 0.52f) prop.Kind = PropKind.Flare;
+            }
+            else if (prop.Kind == PropKind.AlmondWater && WorldHash.Value((uint)id, 93) < 0.07f) prop.Kind = PropKind.FirstAid;   // and some water spots a first-aid kit
             var go = new GameObject(prop.Kind.ToString());
             go.transform.SetParent(chunk.Root.transform, false);
             go.transform.position = at;
@@ -1021,6 +1138,34 @@ namespace Backrooms.World
         void CreateExit(Chunk chunk, ExitSpec exit)
         {
             var go = CreateTrigger(chunk.Root.transform, $"Exit to {exit.Target}", exit.Trigger, exit.Target);
+            if (theme != null && theme.id == "6" && exit.Target == "7")   // the way out of the dark: listen for the waves
+            {
+                var surf = go.AddComponent<AudioSource>();
+                surf.clip = Audio.ProceduralAudio.Surf();
+                surf.loop = true;
+                surf.spatialBlend = 1f;
+                surf.rolloffMode = AudioRolloffMode.Linear;
+                surf.minDistance = 2f;
+                surf.maxDistance = 48f;
+                surf.volume = 0.55f * Meta.AudioMix.Effects;
+                surf.time = Random.value * surf.clip.length;
+                surf.Play();
+            }
+            if (Vanishing(exit))
+            {
+                Vector3 at = exit.Pose.GetColumn(3);
+                var b = new BoxMeshBuilder(at, paints.Length);
+                if (exit.Kind == ExitKind.Door && theme.districts.markedExits) PropLibrary.BuildMarkedExit(exit.Target, exit.Pose, b);
+                else PropLibrary.BuildExit(exit.Kind, exit.Pose, b);
+                var doorMesh = b.ToMesh("Exit");
+                chunk.Meshes.Add(doorMesh);
+                var door = new GameObject("Exit door");
+                door.transform.SetParent(go.transform, false);
+                door.transform.position = at;
+                door.AddComponent<MeshFilter>().sharedMesh = doorMesh;
+                door.AddComponent<MeshRenderer>().sharedMaterials = paints;
+                go.AddComponent<VanishingExit>().Door = at + exit.Pose.MultiplyVector(Vector3.up) * 1.1f;
+            }
             if (exit.Kind != ExitKind.FlickerWall) return;
             // The flickering wall: looks like any other wall, but has no collision and flickers.
             var wall = new BoxMeshBuilder(exit.Trigger.center, 1);
@@ -1033,6 +1178,9 @@ namespace Backrooms.World
             renderer.shadowCastingMode = ShadowCastingMode.Off;
             go.AddComponent<FlickerWall>();
         }
+
+        /// Level 4's exits can be gone once you've looked away (never in co-op, where everyone must see the same doors).
+        bool Vanishing(ExitSpec e) => theme != null && theme.id == "4" && e.Kind != ExitKind.FlickerWall && !Net.Coop.Active;
 
         static GameObject CreateTrigger(Transform parent, string name, Bounds bounds, string target)
         {
@@ -1062,7 +1210,7 @@ namespace Backrooms.World
             nextLights = Time.time + 0.2f;
             emitterSets.Clear();
             foreach (var chunk in chunks.Values) if (chunk.Floor == CurrentFloor) emitterSets.Add(chunk.Emitters);   // light never leaks through floors
-            rig.Refresh(player.position, emitterSets, theme, lightDistance, CurrentDrift);
+            rig.Refresh(player.position, emitterSets, theme, theme.generator == LevelGenerator.Suburbs ? 75f : lightDistance, CurrentDrift);
         }
     }
 }

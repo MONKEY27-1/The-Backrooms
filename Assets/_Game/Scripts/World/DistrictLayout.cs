@@ -116,6 +116,8 @@ namespace Backrooms.World
             public bool Pool;              // dark but for one light
             public float Damp;             // extra chance of damp patches (the Arches)
             public bool Shaft;             // open up to the floor above (under a stairwell or a drop)
+            public bool Bulbs;             // Level 3: bare caged bulbs instead of ceiling panels
+            public bool Lamps;             // Level 5: sconces, lamps and chandeliers instead of ceiling panels
             public float Sunk;             // floor sits this far down (sunken rooms)
             public float Height, Dead, Water;
             public LightLayout Lights;
@@ -228,6 +230,9 @@ namespace Backrooms.World
                         CarveHalls();
                         ComputeRegions();
                         BuildRegions();
+                        Level3Finish();
+                        Level4Finish();
+                        Level5Finish();
                     }
                 }
                 SinkRooms();
@@ -1737,6 +1742,7 @@ namespace Backrooms.World
 
             void Furnish(int id)
             {
+                if (theme.id == "4") { Level4Furnish(id); return; }   // Level 4: the furniture is gone, its traces aren't
                 var z = zones[id];
                 // Most rooms were emptied long ago; stores and showrooms keep their fixtures more often.
                 bool store = z.Kind == ZoneKind.Vignette || z.Kind == ZoneKind.StoreUnit;
@@ -1963,6 +1969,8 @@ namespace Backrooms.World
             {
                 var z = zones[id];
                 if (z.Rect.width <= 0 || z.Rect.height <= 0 || z.Shaft || ds.rafters) return;   // the attic has no ceiling panels, only the glow
+                if (z.Bulbs) { BulbZone(id); return; }
+                if (z.Lamps) { Level5Lights(id); return; }
                 float sx, sz;
                 int emitEvery = 1;
                 bool continuous = false;

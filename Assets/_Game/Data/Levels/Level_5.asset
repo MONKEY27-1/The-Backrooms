@@ -31,52 +31,41 @@ MonoBehaviour:
     featureChance: 0.22
     pitChance: 0
     manilaChance: 0
-    deadLights: 0.08
+    deadLights: 0.12
     blackoutChance: 0.08
     redChance: 0
-    exitChance: 0.25
-    propDensity: 0.04
+    exitChance: 0.22
+    propDensity: 0.004
     glitchChance: 0.12
     props:
-    - kind: 24
-      weight: 2
-    - kind: 25
-      weight: 2.5
-    - kind: 28
-      weight: 2
-    - kind: 30
-      weight: 2
-    - kind: 32
-      weight: 1.5
-    - kind: 21
-      weight: 2
-    - kind: 20
-      weight: 1.5
-    - kind: 27
-      weight: 2
-    - kind: 26
-      weight: 1.5
     - kind: 15
       weight: 1
+    - kind: 16
+      weight: 0.6
     exits:
-    - kind: 1
-      target: 6
-      weight: 3
-    - kind: 3
+    - kind: 2
       target: 4
       weight: 1.5
-    - kind: 2
+    - kind: 3
       target: 3
-      weight: 0.8
+      weight: 1
+    - kind: 1
+      target: 6
+      weight: 0.5
+    - kind: 1
+      target: 9
+      weight: 0.4
   districts:
     kinds:
     - kind: 25
       weight: 6
-    - kind: 4
-      weight: 1.5
+    - kind: 30
+      weight: 0.6
+    - kind: 28
+      weight: 1.2
     roomHeight: {x: 2.6, y: 3.2}
     wallHeight: 6.4
-    darkRoomChance: 0.02
+    darkRoomChance: 0.05
     curiosities: 0.4
     pitFieldChance: 0.02
     floodChance: 0.015
@@ -87,23 +76,25 @@ MonoBehaviour:
     floorGlow: 0
     wikiZones: 0
     markedExits: 1
-  wall: {fileID: 2100000, guid: 2862aa0edfa2e2444adeee4cfd6a4287, type: 2}
+  wall: {fileID: 2100000, guid: 807299a7fdbcbe94eb1490c430080f5c, type: 2}
   floor: {fileID: 2100000, guid: 309fa7fe09bf770409e541dcfdbc0634, type: 2}
-  ceiling: {fileID: 2100000, guid: a958267057ff67a4887b9dc4865fa223, type: 2}
+  ceiling: {fileID: 2100000, guid: fce67fdf7d38c684e902bd8a96215248, type: 2}
   wallpapers:
-  - {fileID: 2100000, guid: 2862aa0edfa2e2444adeee4cfd6a4287, type: 2}
-  - {fileID: 2100000, guid: 297c5527b224bb645a4d6f6327cd91c0, type: 2}
+  - {fileID: 2100000, guid: 807299a7fdbcbe94eb1490c430080f5c, type: 2}
+  - {fileID: 2100000, guid: 7380c84ebbb5dff4891742077f9cfa85, type: 2}
+  - {fileID: 2100000, guid: dfcc9f6620e978a429119708ba50cc71, type: 2}
+  - {fileID: 2100000, guid: 933c6f39207e1f84998e51a6b16ac8d3, type: 2}
   carpets:
   - {fileID: 2100000, guid: 309fa7fe09bf770409e541dcfdbc0634, type: 2}
-  - {fileID: 2100000, guid: 297c5527b224bb645a4d6f6327cd91c0, type: 2}
+  - {fileID: 2100000, guid: a26a9c6b1952cda439772ee03db5ebf3, type: 2}
   ceilings:
-  - {fileID: 2100000, guid: a958267057ff67a4887b9dc4865fa223, type: 2}
+  - {fileID: 2100000, guid: fce67fdf7d38c684e902bd8a96215248, type: 2}
   waterHeight: 0
   zoneWater: 0
-  lightColor: {r: 1, g: 0.82, b: 0.55, a: 1}
+  lightColor: {r: 1, g: 0.8, b: 0.55, a: 1}
   lightIntensity: 1
   lightRange: 6
-  ambient: {r: 0.22, g: 0.16, b: 0.12, a: 1}
-  fogColor: {r: 0.28, g: 0.2, b: 0.15, a: 1}
-  fogDensity: 0.028
-  humVolume: 0.04
+  ambient: {r: 0.15, g: 0.11, b: 0.08, a: 1}
+  fogColor: {r: 0.22, g: 0.16, b: 0.12, a: 1}
+  fogDensity: 0.022
+  humVolume: 0.03

@@ -190,7 +190,10 @@ namespace Backrooms.World
                 foreach (var (kind, giant, cells, _) in regions)
                 {
                     allow = cells;
-                    if (giant) BuildGiantHall();
+                    if (giant && theme.id == "3") BuildGeneratorHall();   // Level 3's giant halls are its generator rooms
+                    else if (giant && theme.id == "5") BuildBallroom();   // Level 5's are ballrooms
+                    else if (giant && theme.id == "6") BuildDarkHalls();   // Level 6 has nothing but its halls
+                    else if (giant) BuildGiantHall();
                     else switch (kind)
                     {
                         case DistrictKind.Maze: BuildMaze(); break;
@@ -216,9 +219,15 @@ namespace Backrooms.World
                         case DistrictKind.GardenHall: BuildHall(4); break;
                         case DistrictKind.FabledHall: BuildHall(5); break;
                         case DistrictKind.Poolrooms: BuildPoolrooms(); break;
-                        case DistrictKind.ElectricalStation: BuildElectricalStation(); break;
-                        case DistrictKind.OfficeCubicles: BuildOfficeCubicles(); break;
-                        case DistrictKind.HotelSuites: BuildHotelSuites(); break;
+                        case DistrictKind.ElectricalStation: BuildMaintenance(false); break;
+                        case DistrictKind.BoilerWorks: BuildMaintenance(true); break;
+                        case DistrictKind.GeneratorHall: BuildGeneratorHall(); break;
+                        case DistrictKind.AssemblyLine: BuildAssemblyLine(); break;
+                        case DistrictKind.OfficeCubicles: BuildOffices(all, true); break;
+                        case DistrictKind.OpenPlan: BuildOpenPlan(); break;
+                        case DistrictKind.HotelSuites: BuildHotelWing(); break;
+                        case DistrictKind.Ballroom: BuildBallroom(); break;
+                        case DistrictKind.DarkHalls: BuildDarkHalls(); break;
                     }
                 }
                 allow = null;

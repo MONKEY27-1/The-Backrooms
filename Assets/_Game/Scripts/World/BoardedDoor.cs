@@ -24,6 +24,8 @@ namespace Backrooms.World
             }
         }
         public float Progress { get; private set; }
+        /// A Wretch broke through (the game remembers it, shares it and makes the noise).
+        public static System.Action<BoardedDoor> Smashed;
 
         /// Called every frame Interact is held while looking at the boards. True when they come off.
         public bool Pry(float dt)

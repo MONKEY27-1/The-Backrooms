@@ -10,7 +10,7 @@ namespace Backrooms.World
         public Vector3 Position;
         public float Range;
         public int Id;
-        public bool Faulty, Red, Sick, Floor;
+        public bool Faulty, Red, Sick, Floor, AlongX;
         public Color Tint;   // alpha 0 = the level's own light colour
     }
 
@@ -19,7 +19,10 @@ namespace Backrooms.World
     /// The nearest few lights cast soft shadows, which stops light leaking through walls where you can see it.
     public sealed class LightRig
     {
-        const int LightCount = 64, ShadowCount = 6, AreaCount = 6, HumCount = 8;
+        // The pool: panel-sized rectangle lights first (the nearest panels, soft shadows), then cheap points further out.
+        const int AreaPool = 28, PointCount = 64, LightCount = AreaPool + PointCount, HumCount = 8;
+        // How many of the nearest panels get a real area light, and how many of those cast shadows, per quality level.
+        static readonly int[] AreaBudget = { 4, 10, 20, 28 }, ShadowBudget = { 3, 6, 10, 14 };
         const float LumensPerUnit = 2600f;   // theme.lightIntensity 1 = a ~2600 lm fluorescent troffer
         static readonly Color RedTint = new Color(1f, 0.45f, 0.4f);
         static readonly Color SickTint = new Color(0.72f, 1f, 0.62f);
@@ -37,6 +40,9 @@ namespace Backrooms.World
         /// 0 = normal, 1 = every light dead (the fear director's blackouts).
         public float Dim;
 
+        /// Lights that are dead for now (a Smiler's dark pocket): skipped, as if they weren't there.
+        public System.Func<Vector3, bool> Suppressed;
+
         public LightRig(Transform parent, AudioClip hum)
         {
             for (int i = 0; i < LightCount; i++)
@@ -44,16 +50,17 @@ namespace Backrooms.World
                 var go = new GameObject($"Pooled Light {i}");
                 go.transform.SetParent(parent, false);
                 // The nearest few are rectangle lights the size of a panel: soft, real-looking falloff and shadows.
-                var hd = go.AddHDLight(i < AreaCount ? LightType.Rectangle : LightType.Point);
+                bool rect = i < AreaPool;
+                var hd = go.AddHDLight(rect ? LightType.Rectangle : LightType.Point);
                 var light = go.GetComponent<Light>();
                 light.lightUnit = LightUnit.Lumen;
-                if (i < AreaCount)
+                if (rect)
                 {
                     light.areaSize = new Vector2(1.1f, 0.55f);
                     go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);   // facing down
                 }
-                light.shadows = i < ShadowCount ? LightShadows.Soft : LightShadows.None;
-                hd.SetShadowResolutionLevel(i < 2 ? 3 : 2);
+                light.shadows = rect ? LightShadows.Soft : LightShadows.None;   // switched per refresh by the budget
+                hd.SetShadowResolutionLevel(i < 4 ? 3 : 2);
                 hd.volumetricDimmer = 0.6f;   // a little light in the haze
                 light.shadowNearPlane = 0.1f;
                 light.enabled = false;
@@ -83,6 +90,7 @@ namespace Backrooms.World
             foreach (var set in sets)
                 foreach (var e in set)
                 {
+                    if (Suppressed != null && Suppressed(e.Position)) continue;
                     float dx = e.Position.x - player.x, dz = e.Position.z - player.z;
                     float d = Mathf.Sqrt(dx * dx + dz * dz);
                     if (d < maxDistance) nearby.Add((e, d));
@@ -90,16 +98,20 @@ namespace Backrooms.World
             nearby.Sort((a, b) => a.d.CompareTo(b.d));
             NearestDistance = nearby.Count > 0 ? nearby[0].d : float.MaxValue;
 
+            int q = Mathf.Clamp(Meta.GameSettings.Current.quality, 0, 3);
+            int areas = AreaBudget[q], shadows = ShadowBudget[q];
             for (int i = 0; i < LightCount; i++)
             {
                 var light = lights[i];
-                active[i] = i < nearby.Count;
+                int n = i < AreaPool ? (i < areas ? i : -1) : areas + i - AreaPool;   // which nearby panel this light takes
+                active[i] = n >= 0 && n < nearby.Count;
                 if (!active[i])
                 {
                     light.enabled = false;
                     continue;
                 }
-                var (e, d) = nearby[i];
+                if (i < AreaPool) light.shadows = i < shadows ? LightShadows.Soft : LightShadows.None;
+                var (e, d) = nearby[n];
                 assigned[i] = e;
                 bool area = light.type == LightType.Rectangle;
                 light.transform.position = e.Position + (e.Floor ? Vector3.up * 0.25f : area ? Vector3.down * 0.03f : Vector3.down * 0.6f);
@@ -116,7 +128,7 @@ namespace Backrooms.World
 
             for (int i = 0; i < HumCount; i++)
             {
-                var source = hums[i];
+                var source = hums[i];   // hums follow the nearest panels, whatever light they got
                 bool use = Dim < 0.5f && i < nearby.Count && nearby[i].d < source.maxDistance;
                 if (!use)
                 {

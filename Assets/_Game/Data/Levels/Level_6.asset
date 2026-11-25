@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Backrooms::Backrooms.World.LevelTheme
   id: 6
   displayName: "Level 6 \xB7 Lights Out"
-  credit: Based on "Level 6 - Lights Out", https://backrooms-wiki.wikidot.com/level-6 , original by u/ThePizzaEater1000 and u/Mileisbored, rewrites by Abe Venrick, 1000dumplings, Bart0nius. Licensed CC BY-SA 3.0. Adapted for this game.
+  credit: Based on "Level 6 - Lights Out", https://backrooms-wiki.wikidot.com/level-6 , by Bart0nius (originally with u/ThePizzaEater1000 and u/Mileisbored; earlier rewrites by Abe Venrick and 1000dumplings). Licensed CC BY-SA 3.0. Adapted for this game.
   generator: 1
   staticLevel: {fileID: 0}
   baseDrift: 0
@@ -32,16 +32,16 @@ MonoBehaviour:
     pitChance: 0
     manilaChance: 0
     deadLights: 1
-    blackoutChance: 1
+    blackoutChance: 0
     redChance: 0
-    exitChance: 0.15
-    propDensity: 0.003
+    exitChance: 0.4
+    propDensity: 0.002
     glitchChance: 0.12
     props:
-    - kind: 19
+    - kind: 15
       weight: 1
-    - kind: 7
-      weight: 1
+    - kind: 16
+      weight: 1.5
     exits:
     - kind: 2
       target: 7
@@ -51,11 +51,7 @@ MonoBehaviour:
       weight: 1
   districts:
     kinds:
-    - kind: 4
-      weight: 4
-    - kind: 0
-      weight: 2
-    - kind: 6
+    - kind: 31
       weight: 1
     roomHeight: {x: 2.6, y: 3.2}
     wallHeight: 6.4
@@ -70,13 +66,13 @@ MonoBehaviour:
     floorGlow: 0
     wikiZones: 0
     markedExits: 0
-  wall: {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
-  floor: {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  wall: {fileID: 2100000, guid: e8285fbcc8b48f44083de0c795647342, type: 2}
+  floor: {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
   ceiling: {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
   wallpapers:
-  - {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  - {fileID: 2100000, guid: e8285fbcc8b48f44083de0c795647342, type: 2}
   carpets:
-  - {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
+  - {fileID: 2100000, guid: cfbd61e78e030fd43b81af694a06eae0, type: 2}
   ceilings:
   - {fileID: 2100000, guid: 27eea62e7ede01d458b64a08d9278602, type: 2}
   waterHeight: 0
@@ -84,7 +80,7 @@ MonoBehaviour:
   lightColor: {r: 0.01, g: 0.01, b: 0.01, a: 1}
   lightIntensity: 0
   lightRange: 1
-  ambient: {r: 0, g: 0, b: 0, a: 1}
+  ambient: {r: 0.004, g: 0.004, b: 0.005, a: 1}
   fogColor: {r: 0, g: 0, b: 0, a: 1}
-  fogDensity: 0.08
+  fogDensity: 0.12
   humVolume: 0

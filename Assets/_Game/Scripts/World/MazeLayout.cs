@@ -46,6 +46,9 @@ namespace Backrooms.World
         public readonly List<PlankSpec> Planks = new List<PlankSpec>();            // planks across pitfalls
         public readonly List<SurfaceQuad> Damp = new List<SurfaceQuad>();          // Level 0's moist carpet: glossy wet patches
         public readonly List<SurfaceSlope> Slopes = new List<SurfaceSlope>();      // Level 1's car ramps
+        public readonly List<SpecialSpec> Specials = new List<SpecialSpec>();      // Level 3: bars, sludge, the Sanctum, machine hum
+
+        public readonly List<RockMesh> Rocks = new List<RockMesh>();               // natural terrain: Level 7's sea floor, Level 8's caves
 
         /// Moves everything up by `dy` (stacked floors are generated at height 0, then lifted into place).
         public void Shift(float dy)
@@ -72,6 +75,8 @@ namespace Backrooms.World
             for (int i = 0; i < Pits.Count; i++) { var b = Pits[i]; b.center += up; Pits[i] = b; }
             for (int i = 0; i < Blockers.Count; i++) { var b = Blockers[i]; b.center += up; Blockers[i] = b; }
             for (int i = 0; i < Openings.Count; i++) { var b = Openings[i]; b.center += up; Openings[i] = b; }
+            foreach (var r in Rocks) for (int i = 0; i < r.V.Count; i++) r.V[i] += up;
+            for (int i = 0; i < Specials.Count; i++) { var s = Specials[i]; s.Pose = lift * s.Pose; Specials[i] = s; }
         }
     }
 

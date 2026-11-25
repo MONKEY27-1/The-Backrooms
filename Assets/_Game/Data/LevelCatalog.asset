@@ -57,6 +57,8 @@ MonoBehaviour:
   - {fileID: 2100000, guid: eba22493755b7314b9ed253611ec9e49, type: 2}
   - {fileID: 2100000, guid: 70c435a98af5c5c409cf00f22ae2f20d, type: 2}
   - {fileID: 2100000, guid: 3a416696dc864148995524a6c88eb506, type: 2}
+  - {fileID: 2100000, guid: 04bb3c7eda997994a976c36d1a2b1895, type: 2}
+  - {fileID: 2100000, guid: 900d4a270f52961478cab3ae538a935d, type: 2}
   panelLit: {fileID: 2100000, guid: 1f564e27118b2c24b98e8230136ec629, type: 2}
   panelDead: {fileID: 2100000, guid: cedc13e2ecfcae7469af948646f4d508, type: 2}
   water: {fileID: 2100000, guid: 5a1edb8a582dd144984a6243b2da4ca1, type: 2}

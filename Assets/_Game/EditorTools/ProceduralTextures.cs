@@ -81,7 +81,9 @@ namespace Backrooms.EditorTools
             var albedo = new Color32[S * S];
             var height = new float[S * S];
             var mask = new Color32[S * S];
-            var ink = Color.Lerp(tint * 0.89f, new Color(0.55f, 0.47f, 0.25f), 0.14f);
+            var ink = pattern >= 6 ? new Color(0.74f, 0.56f, 0.24f)   // 6: the damask printed in gold (Level 5's hotel)
+                                   : Color.Lerp(tint * 0.89f, new Color(0.55f, 0.47f, 0.25f), 0.14f);
+            if (pattern == 6) pattern = 2;   // ...as a diamond trellis between fine stripes
 
             var rng = new System.Random(seed);
             // Bubbles: soft lumps where the paste failed.
@@ -207,6 +209,129 @@ namespace Backrooms.EditorTools
                 float r = 0.5f - Mathf.Clamp01(dark) * 0.5f;    // HDRP detail albedo remaps around neutral grey
                 float smooth = Mathf.Clamp01(0.5f - inside * 0.12f + patchSmooth);   // stained/patched paper varies in sheen
                 px[y * S + x] = new Color(r, 0.5f, smooth, 0.5f);
+            }
+            return FromPixels(S, px, true);
+        }
+
+        /// Slow colour and sheen drift for big surfaces, as an HDRP detail map (0.5 = no change), tiling.
+        public static Texture2D MacroVariation()
+        {
+            const int S = 512;
+            var px = new Color32[S * S];
+            for (int y = 0; y < S; y++)
+            for (int x = 0; x < S; x++)
+            {
+                float u = x / (float)S, v = y / (float)S;
+                float tone = Fbm(u, v, 3, 5, 0x51A) - 0.5f, sheen = Fbm(u, v, 5, 4, 0x77C) - 0.5f;
+                px[y * S + x] = new Color(0.47f + tone * 0.35f, 0.5f, 0.5f + sheen * 0.5f, 0.5f);
+            }
+            return FromPixels(S, px, true);
+        }
+
+        /// Grime decals, 2x2 (GrimeDressing.Cell): stain and mould below, leak and wall-foot dirt above. Alpha = how dirty.
+        public static Texture2D GrimeAtlas()
+        {
+            const int S = 1024, C = S / 2;
+            var px = new Color32[S * S];
+            for (int cell = 0; cell < 4; cell++)
+            for (int y = 0; y < C; y++)
+            for (int x = 0; x < C; x++)
+            {
+                float u = x / (float)C, v = y / (float)C;
+                float big = Fbm(u, v, 4, 5, 0x31 + cell), fine = Fbm(u, v, 24, 3, 0x93 + cell);
+                float r = new Vector2(u - 0.5f, v - 0.5f).magnitude * 2f;
+                Color c; float a;
+                switch (cell)
+                {
+                    case 0:   // a dried spill with a darker tide line
+                    {
+                        float d = r + (big - 0.5f) * 0.9f, inside = 1f - Edge(0.55f, 0.7f, d);
+                        c = new Color(0.16f, 0.12f, 0.07f);
+                        a = (inside * 0.3f + Mathf.Exp(-Mathf.Pow((d - 0.6f) * 16f, 2f)) * 0.3f) * (0.6f + fine * 0.6f);
+                        break;
+                    }
+                    case 1:   // mould: speckled colonies, thickest at the bottom
+                        c = new Color(0.07f, 0.075f, 0.05f);
+                        a = Edge(0.45f, 0.62f, big * 0.6f + fine * 0.4f + (0.5f - r) * 0.25f) * (1f - v * 0.6f) * 0.7f;
+                        break;
+                    case 2:   // a leak running down from the top
+                        c = new Color(0.2f, 0.14f, 0.07f);
+                        a = Edge(0.42f, 0.75f, Fbm(u, v * 0.06f, 14, 3, 0x7A)) * Edge(0.05f + big * 0.5f, 0.9f, v) * 0.6f * Edge(0f, 0.03f, 1f - v);
+                        break;
+                    default:  // dirt and scuffs along the foot of a wall
+                        c = new Color(0.12f, 0.1f, 0.07f);
+                        a = Mathf.Pow(1f - v, 2.2f) * (0.25f + big * 0.6f) * (0.6f + fine * 0.5f) * 0.75f;
+                        break;
+                }
+                a *= Edge(0f, 0.18f, u) * Edge(0f, 0.18f, 1f - u);
+                if (cell < 2) a *= 1f - Edge(0.75f, 1f, r);
+                c.a = Mathf.Clamp01(a);
+                px[(y + (cell >> 1) * C) * S + x + (cell & 1) * C] = c;
+            }
+            return FromPixels(S, px, true);
+        }
+
+        /// Blood marks, 2x2 (Blood.Cell): a splat, a pool, a wall splash running down, scattered drops.
+        public static Texture2D BloodAtlas()
+        {
+            const int S = 1024, C = S / 2;
+            var px = new Color32[S * S];
+            var rng = new System.Random(1313);
+            float R(float a, float b) => a + (float)rng.NextDouble() * (b - a);
+            for (int cell = 0; cell < 4; cell++)
+            {
+                var depth = new float[C * C];   // how thick the blood lies
+                void Blob(float cx, float cy, float rx, float ry)
+                {
+                    for (int y = Mathf.Max(0, (int)((cy - ry) * C)); y < Mathf.Min(C, (cy + ry) * C); y++)
+                        for (int x = Mathf.Max(0, (int)((cx - rx) * C)); x < Mathf.Min(C, (cx + rx) * C); x++)
+                        {
+                            float dx = (x / (float)C - cx) / rx, dy = (y / (float)C - cy) / ry, d = 1f - Mathf.Sqrt(dx * dx + dy * dy);
+                            if (d > 0f) depth[y * C + x] += d * Mathf.Clamp(Mathf.Min(rx, ry) * 25f, 0.35f, 1f);
+                        }
+                }
+                void Scatter(int n, float spread, float small, float big)
+                {
+                    for (int i = 0; i < n; i++)
+                    {
+                        float a = R(0f, Mathf.PI * 2f), d = R(0f, spread), r = R(small, big);
+                        Blob(0.5f + Mathf.Cos(a) * d, 0.5f + Mathf.Sin(a) * d, r, r * R(0.75f, 1.2f));
+                    }
+                }
+                if (cell == 0)   // a heavy middle with rays of drops flung outwards
+                {
+                    Scatter(60, 0.16f, 0.02f, 0.1f);
+                    for (int i = 0; i < 90; i++)   // teardrops, thin at the near end
+                    {
+                        float ang = R(0f, Mathf.PI * 2f), from = R(0.1f, 0.4f), len = R(0.015f, 0.09f) * (1f - from), end = R(0.003f, 0.017f);
+                        for (float t = 0f; t < 1f; t += 0.08f) { float w = end * (0.25f + 0.75f * t); Blob(0.5f + Mathf.Cos(ang) * (from + len * t), 0.5f + Mathf.Sin(ang) * (from + len * t), w, w); }
+                    }
+                }
+                else if (cell == 1) Scatter(220, 0.3f, 0.04f, 0.1f);
+                else if (cell == 2)   // v = 1 is the top
+                {
+                    for (int i = 0; i < 22; i++) { float r = R(0.03f, 0.11f); Blob(R(0.28f, 0.72f), R(0.7f, 0.86f), r, r); }
+                    for (int i = 0; i < 60; i++) { float r = R(0.004f, 0.016f); Blob(R(0.06f, 0.94f), R(0.5f, 0.96f), r, r); }
+                    for (int i = 0; i < 13; i++)
+                    {
+                        float x = R(0.26f, 0.74f), end = R(0.06f, 0.6f), w = R(0.006f, 0.014f);
+                        for (float y = 0.75f; y > end; y -= 0.005f) { x += R(-0.0012f, 0.0012f); Blob(x, y, w, w * 1.4f); }
+                        Blob(x, end, w * 1.7f, w * 2.2f);
+                    }
+                }
+                else Scatter(26, 0.42f, 0.006f, 0.04f);
+                for (int y = 0; y < C; y++)
+                for (int x = 0; x < C; x++)
+                {
+                    float u = x / (float)C, v = y / (float)C, warp = cell == 1 ? 60f : cell == 2 ? 10f : 24f;   // edges wander; runs stay straight
+                    int wx = Mathf.Clamp(x + (int)((Fbm(u, v, 5, 4, 0x21 + cell) - 0.5f) * warp), 0, C - 1), wy = Mathf.Clamp(y + (int)((Fbm(u, v, 5, 4, 0x41 + cell) - 0.5f) * warp), 0, C - 1);
+                    float d = depth[wy * C + wx];
+                    float a = Edge(0.04f, 0.16f, d + (Fbm(u, v, 24, 3, 0x51 + cell) - 0.5f) * 0.06f * Mathf.Clamp01(d * 10f));
+                    a *= Edge(0f, 0.03f, u) * Edge(0f, 0.03f, 1f - u) * Edge(0f, 0.03f, v) * Edge(0f, 0.03f, 1f - v);
+                    var c = Color.Lerp(new Color(0.72f, 0.03f, 0.025f), new Color(0.4f, 0.008f, 0.01f), Mathf.Clamp01(d * 0.7f) * (0.7f + 0.6f * Fbm(u, v, 6, 4, 0x61 + cell)));   // thick blood is darker
+                    c.a = a * 0.96f;
+                    px[(y + (cell >> 1) * C) * S + x + (cell & 1) * C] = c;
+                }
             }
             return FromPixels(S, px, true);
         }

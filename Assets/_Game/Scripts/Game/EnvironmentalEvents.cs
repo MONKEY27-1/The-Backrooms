@@ -63,7 +63,7 @@ namespace Backrooms.Game
             }
             if (!LevelSync.Decides || Time.time < nextEvent) return;
             nextEvent = Time.time + Random.Range(MinInterval, MaxInterval) * Meta.Difficulty.Cooldowns;
-            if (Meta.Difficulty.Mode == Meta.GameMode.Exploration) return;
+            if (Meta.Difficulty.Mode == Meta.GameMode.Exploration || (streamer.Theme != null && (streamer.Theme.generator == LevelGenerator.Caves || streamer.Theme.generator == LevelGenerator.Suburbs))) return;   // no furniture in caves or streets
             Vector3 at = FindSpot();
             if (at == Vector3.zero) return;
             byte kind = (byte)Random.Range(0, 3); // lights, temporary obstruction, altered room dressing

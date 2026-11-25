@@ -20,25 +20,25 @@ namespace Backrooms.UI
                     + "The green exit signs keep glowing.");
                 case "2": return ("Moderate", "Narrow maintenance tunnels of brick and concrete, every wall lined with pipes. Doors that won't open, "
                     + "boilers ticking away in dead ends, puddles of oil, and the air hot and close. Following the pipes is as good a plan as any.");
-                case "3": return ("High", "A sprawling, noisy complex of electrical rooms, transformers, and maintenance corridors. "
-                    + "Cables hang from rusted ceilings, industrial machinery hums with deafening intensity, and lights flicker violently. "
-                    + "Valuable supplies can be scavenged here, but high voltage hazards and stalking shadows make lingering fatal.");
-                case "4": return ("Low", "An expansive, abandoned office complex devoid of furniture except for cubicles, empty desks, and water coolers. "
-                    + "Pristine white walls and rough carpeting create a deceptive sense of safety. Almond water is plentiful here, "
-                    + "though blacked-out windows looking into endless voids should never be approached.");
-                case "5": return ("Moderate", "A grand, infinite 1920s hotel with rich mahogany wood, ornate red damask wallpaper, chandeliers, and ballrooms. "
-                    + "Faint gramophone jazz and whispered conversations echo down empty corridors. Deeper service halls and the sweltering boiler room "
-                    + "lead down into far worse places.");
-                case "6": return ("Deadly", "A realm of absolute, suffocating darkness. No natural light exists, and artificial light sources are heavily absorbed and smothered. "
-                    + "Acoustically dead, smooth cold concrete walls provide the only reference as sensory deprivation rapidly degrades sanity. "
-                    + "Sound travels poorly; fear fills the void.");
-                case "7": return ("Deadly", "A boundless, frigid ocean contained under an oppressive concrete ceiling. Entering through a damp concrete bunker, "
-                    + "wanderers find submerged halls and sheer aquatic drops into infinite black water. Below the surface, immense pressure and "
-                    + "submerged cave entrances await.");
-                case "8": return ("Extreme", "A treacherous, pitch-black karst cave network of damp stone, towering stalactites, and claustrophobic crawlspaces. "
-                    + "Spatial distortions make tunnels loop unnaturally, while echoes carry for miles into the subterranean dark. "
-                    + "Falling through cavern floors can drop you straight into the neighborhood below.");
-                case "9": return ("High", "An infinite suburban neighborhood frozen in perpetual midnight. Paved wet streets, dark driveways, and vacant single-family houses "
+                case "3": return ("Survival difficulty 4", "Brick and dusty concrete, hot and loud. Tunnels shrink to crawlspaces and open into generator halls "
+                    + "the size of a food court. The assembly lines are where the supplies are; the boiler rooms leak a scalding black sludge. "
+                    + "Some rooms sit behind bars with no gate. If you hear someone crying, keep walking. If you find a statue of an angel, rest: nothing follows you in.");
+                case "4": return ("Survival difficulty 1", "An empty office building. The furniture is gone; you can still see where it stood. Water coolers, vending machines "
+                    + "and fountains all run almond water. Most windows are blacked out. If you find one that isn't, don't look through it for long, "
+                    + "and don't touch it. People lived here once: M.E.G., a quiet cult, some collectors. Their rooms are still here.");
+                case "5": return ("Survival difficulty 2", "An endless 1930s hotel: mahogany, gold, red carpet, rooms behind numbered doors that follow no order. Some doors open "
+                    + "and close on their own. The copper-cage elevators run to floors 1-12 somewhere else in the hotel; never press 13. Find the Beverly Room's ballroom "
+                    + "and its doors will be different every time. The boiler room is unbearably hot, and somewhere at its bottom are the stairs to Level 6.");
+                case "6": return ("Survival difficulty unknown", "Tight hallways of something smooth and cold, and a darkness your light can't push back more than an arm's length. "
+                    + "Silence, except for what you make, and sometimes what makes it back. Mark the walls with chalk (G). "
+                    + "Listen for the sea: the stairs down to Level 7 are where the waves are loudest. Corridors behind you don't always stay open.");
+                case "7": return ("Survival difficulty 4", "An endless, cold sea under a concrete sky. You arrive in a furnished room built sideways into that sky; "
+                    + "its door drops you into the water. Below: the Daylight zone, the Twilight (bones), the Midnight (darkness, pressure), the Abyss (tar). "
+                    + "Rest on the pillars. Fort Surrender's diving helmet doubles your breath. The way on is a lit cave on a drowned mountain, 88 m down.");
+                case "8": return ("Extreme", "An endless network of natural caves: tunnels that climb, dip and cross over each other, huge chambers, crawls. Lamps reach half as far here and batteries drain twice as fast. "
+                    + "Yellow M.E.G. posts mark the 9th Road, the safest way through. Off it are pits that flood, boiling tar with hands in it, and crawls that come out where you have already been. "
+                    + "The road ends at a shaft; the fall comes out in Level 9.");
+                case "9": return ("High", "An infinite suburb at midnight, wet and foggy. The houses are furnished, nobody lives in them and nothing in them has power. Stay off the streets: fog rolls down them and gets into your head, and lights in the sky search them. Cover stops the beams. One power line is live; follow it. The houses "
                     + "stand under the dim yellow haze of flickering sodium-vapor streetlights. A heavy ground fog clings to the lawns, concealing things that watch from the roads.");
                 case "37": return ("Low", "An immense, empty complex of pristine white ceramic tile beneath lukewarm, gently rippling water. "
                     + "Rooms and corridors join without any clear purpose; pillars interrupt open pools, some expanses have no ledges, and the light falls "

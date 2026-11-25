@@ -25,6 +25,10 @@ namespace Backrooms.Player
         public bool FlashlightOn { get; private set; }
         public bool CamcorderUp { get; private set; }
         public bool BagOpen { get; private set; }
+        public Light Lamp => lamp;
+        public Transform BagTransform => bagRoot != null && bagRoot.activeSelf ? bagRoot.transform : null;
+        public Transform Holding { get; private set; }
+        public bool Prying => LookingAtBoards != null && interact != null && interact.IsPressed();
         public Pickup LookingAt { get; private set; }
         public Readable LookingAtReadable { get; private set; }
         public PoolSwitch LookingAtSwitch { get; private set; }
@@ -32,11 +36,18 @@ namespace Backrooms.Player
         public Game.GoalDoor LookingAtGoalDoor { get; private set; }
         public Game.PartyFood LookingAtFood { get; private set; }
         public Seat LookingAtSeat { get; private set; }
+        public WaterSpot LookingAtWater { get; private set; }
+        public IInteractable LookingAtThing { get; private set; }
+        float level6Time;      // the flashlight weakens the longer you're in Level 6
+        Vector3 chalkFrom;     // where you were a moment ago, so a chalk arrow points the way you were going   // hotel doors, elevator buttons and the like
 
         /// A level goal's item was picked up (its index).
         public event Action<int> GoalTaken;
         /// Tried a door that's still locked: what it says.
         public event Action<string> DoorLocked;
+
+        /// Threw a glowstick or an Exterminator: what, from where, how fast (the game spawns it, for friends too).
+        public event Action<PropKind, Vector3, Vector3> Threw;
 
         /// Boards pried off a doorway (the game remembers them and the noise carries).
         public event Action<BoardedDoor> Pried;
@@ -78,7 +89,7 @@ namespace Backrooms.Player
         Coroutine swing;
         AudioSource rustle;
         // Where the bag sits when it's open in front of you, and where it hangs on your back.
-        static readonly Vector3 BagFront = new Vector3(0f, -0.4f, 0.66f), BagShoulder = new Vector3(0.42f, 0.02f, 0.12f), BagBack = new Vector3(0.32f, -0.05f, -0.45f);
+        static readonly Vector3 BagFront = new Vector3(0f, -0.4f, 0.61f), BagShoulder = new Vector3(0.42f, 0.02f, 0.12f), BagBack = new Vector3(0.32f, -0.05f, -0.45f);
         static readonly Quaternion BagFrontRot = Quaternion.Euler(-42f, 0f, 0f), BagShoulderRot = Quaternion.Euler(15f, 70f, 30f), BagBackRot = Quaternion.Euler(-20f, 160f, 45f);
         int shownWater = -1, shownBatteries = -1;
         float baseFov;
@@ -89,6 +100,7 @@ namespace Backrooms.Player
             body = GetComponent<FirstPersonController>();
             cam = GetComponentInChildren<Camera>();
             baseFov = cam.fieldOfView;
+            if (GetComponent<FirstPersonArms>() == null) gameObject.AddComponent<FirstPersonArms>();
 
             var go = new GameObject("Flashlight");
             go.transform.SetParent(cam.transform, false);
@@ -129,7 +141,8 @@ namespace Backrooms.Player
 
             // Flashlight.
             if (!BagOpen && flashlight.WasPressedThisFrame() && FlashlightBattery > 0f) FlashlightOn = !FlashlightOn;
-            if (FlashlightOn) FlashlightBattery = Mathf.Max(0f, FlashlightBattery - dt / flashlightTime * Meta.Difficulty.Battery);
+            var here = ChunkStreamer.Instance != null && ChunkStreamer.Instance.Theme != null ? ChunkStreamer.Instance.Theme.id : "";
+            if (FlashlightOn) FlashlightBattery = Mathf.Max(0f, FlashlightBattery - dt / flashlightTime * Meta.Difficulty.Battery * (here == "8" ? 2f : 1f));   // Level 8 eats batteries
             if (!Meta.Difficulty.SurvivalEnabled) { FlashlightBattery = 1f; CamcorderBattery = 1f; }
             if (FlashlightBattery <= 0f) FlashlightOn = false;
 
@@ -137,19 +150,39 @@ namespace Backrooms.Player
             bool inLevel6 = streamer != null && streamer.Theme != null && streamer.Theme.id == "6";
             if (inLevel6)
             {
-                // Level 6 "Lights Out": anomalous darkness smothers artificial light
-                lamp.range = 3.2f;
-                lamp.intensity = 55f;
+                // Level 6 "Lights Out": the dark eats the beam, about two metres of it, and more the longer you stay.
+                level6Time += dt;
+                float worn = Mathf.Clamp01(level6Time / 600f);
+                lamp.range = Mathf.Lerp(2.4f, 1.6f, worn);
+                lamp.intensity = Mathf.Lerp(40f, 18f, worn);
+                if (Controls.Chalk.WasPressedThisFrame() && !BagOpen)
+                {
+                    var walking = transform.position - chalkFrom;
+                    if (Chalk.Draw(cam.transform.position, cam.transform.forward, walking.sqrMagnitude > 0.04f ? walking : Vector3.zero)) UI.Captions.Say("[chalk scratching on concrete]");
+                }
+                if ((transform.position - chalkFrom).sqrMagnitude > 1f) chalkFrom = Vector3.Lerp(chalkFrom, transform.position, 0.5f);
             }
             else
             {
-                lamp.range = 22f;
-                lamp.intensity = 900f;
+                level6Time = 0f;
+                lamp.range = here == "8" ? 15f : 22f;   // and swallows the beam
+                lamp.intensity = here == "8" ? 850f : here == "7" && Players.Local != null && Players.Local.Body.Underwater ? Mathf.Lerp(2500f, 24000f, (OceanLayout.OceanWaterLevel - transform.position.y) / 70f) : 900f;   // a diver's beam: water eats most of it
             }
 
             bool stutter = ((FlashlightBattery < 0.15f) || (inLevel6 && Mathf.PerlinNoise(Time.time * 2.5f, 9.4f) < 0.35f))
                 && Mathf.PerlinNoise(Time.time * 6f, 0f) < 0.3f;
             lamp.enabled = FlashlightOn && !stutter;
+
+            // Throwables: a glowstick (Q) to lure a Smiler away, an Exterminator (X) to drive it off.
+            if (!BagOpen && ReadingText == null)
+            {
+                if (Controls.ThrowLight.WasPressedThisFrame() && status.Glowsticks > 0) { status.Glowsticks--; Throw(PropKind.Glowstick, 8f); }
+                else if (Controls.ThrowBottle.WasPressedThisFrame() && status.Exterminators > 0) { status.Exterminators--; Throw(PropKind.Exterminator, 11f); }
+                else if ((Controls.Flare.WasPressedThisFrame() || (Controls.ThrowBottle.WasPressedThisFrame() && status.Exterminators == 0)) && status.Flares > 0) { status.Flares--; Throw(PropKind.Flare, 9f); }
+                else if (Controls.Repellent.WasPressedThisFrame() && status.Repellent > 0) { status.Repellent--; Hands.Play(Hands.Give); Threw?.Invoke(PropKind.Repellent, cam.transform.position + cam.transform.forward * 0.4f, cam.transform.forward * 4f); }
+                else if (Controls.SetDown.WasPressedThisFrame() && status.AlmondWater > 0) { status.AlmondWater--; Hands.Play(Hands.Give); Threw?.Invoke(PropKind.AlmondWater, cam.transform.position + cam.transform.forward * 0.5f + Vector3.down * 0.4f, cam.transform.forward * 1.2f); UI.Captions.Say("[you set a bottle down, open]"); }
+                else if (Controls.FirstAid.WasPressedThisFrame() && status.Patch()) { Hands.Play(Hands.Give); UI.Captions.Say("[tearing bandages]"); }
+            }
 
             // Camcorder: raised while held.
             CamcorderUp = !BagOpen && camcorder.IsPressed() && CamcorderBattery > 0f;
@@ -166,6 +199,8 @@ namespace Backrooms.Player
             LookingAtSwitch = null;
             LookingAtFriend = null;
             LookingAtSeat = null;
+            LookingAtWater = null;
+            LookingAtThing = null;
             var lastBoards = LookingAtBoards;
             LookingAtBoards = null;
             if (!BagOpen && Physics.Raycast(cam.transform.position, cam.transform.forward, out var hit, reach, ~(1 << BagLayer), QueryTriggerInteraction.Collide))
@@ -178,6 +213,8 @@ namespace Backrooms.Player
                 LookingAtBoards = hit.collider.GetComponentInParent<BoardedDoor>();
                 LookingAtFriend = hit.collider.GetComponentInParent<Net.CoopAvatar>();
                 LookingAtSeat = hit.collider.GetComponentInParent<Seat>();
+                LookingAtWater = hit.collider.GetComponentInParent<WaterSpot>();
+                LookingAtThing = hit.collider.GetComponentInParent<IInteractable>();
                 if (LookingAtFriend != null && (LookingAtFriend.IsOwner || !LookingAtFriend.Alive)) LookingAtFriend = null;
             }
             // Hold Interact to pry boards off; let go (or look away) and you lose your grip.
@@ -201,14 +238,29 @@ namespace Backrooms.Player
                 if (ReadingText != null) ReadingText = null;
                 else if (LookingAt != null) Collect(LookingAt);
                 else if (LookingAtReadable != null) ReadIt(LookingAtReadable);
-                else if (LookingAtSwitch != null) LookingAtSwitch.Press();
-                else if (LookingAtGoalDoor != null && LookingAtGoalDoor.Locked) DoorLocked?.Invoke(LookingAtGoalDoor.LockedText);
+                else if (LookingAtSwitch != null) { Hands.Play(Hands.Interact); LookingAtSwitch.Press(); }
+                else if (LookingAtGoalDoor != null && LookingAtGoalDoor.Locked)
+                {
+                    Hands.Play(Hands.Push);
+                    DoorLocked?.Invoke(LookingAtGoalDoor.LockedText);
+                }
                 else if (LookingAtFood != null) Eat(LookingAtFood);
                 else if (LookingAtFriend != null) GiveTo(LookingAtFriend);
-                else if (LookingAtSeat != null) body.Sit(LookingAtSeat);
+                else if (LookingAtSeat != null && body.Sit(LookingAtSeat)) Hands.Play(Hands.Interact);
+                else if (LookingAtWater != null) DrinkHere();
+                else if (LookingAtThing != null) LookingAtThing.Interact();
             }
 
             if (BagOpen) UpdateBag();
+        }
+
+        /// Level 4's coolers and fountains: almond water, as much as you like.
+        void DrinkHere()
+        {
+            Hands.Play(Hands.Drink);
+            status.Thirst = 1f;
+            status.Sanity = Mathf.Min(1f, status.Sanity + 0.05f);
+            Looted?.Invoke("Almond water, cold. Faintly sweet, like vanilla.");
         }
 
         /// Turns a painting over to read the back, or reads a note and keeps it in the logbook.
@@ -226,8 +278,8 @@ namespace Backrooms.Player
         /// Hands a friend a bottle of almond water (or, with none left, a battery).
         void GiveTo(Net.CoopAvatar friend)
         {
-            if (status.AlmondWater > 0) { status.AlmondWater--; Gave?.Invoke(friend, PropKind.AlmondWater); }
-            else if (status.Batteries > 0) { status.Batteries--; Gave?.Invoke(friend, PropKind.Battery); }
+            if (status.AlmondWater > 0) { status.AlmondWater--; Hands.Play(Hands.Give); Gave?.Invoke(friend, PropKind.AlmondWater); }
+            else if (status.Batteries > 0) { status.Batteries--; Hands.Play(Hands.Give); Gave?.Invoke(friend, PropKind.Battery); }
         }
 
         void Collect(Pickup p)
@@ -239,34 +291,55 @@ namespace Backrooms.Player
                 return;
             }
             if (p.Kind == PropKind.AlmondWater) status.AlmondWater++;
+            else if (p.Kind == PropKind.Glowstick) status.Glowsticks += 2;
+            else if (p.Kind == PropKind.Exterminator) status.Exterminators++;
+            else if (p.Kind == PropKind.FirstAid) status.FirstAid++;
+            else if (p.Kind == PropKind.Repellent) status.Repellent += 3;
+            else if (p.Kind == PropKind.Flare) status.Flares++;
             else status.Batteries++;
             PickedUp?.Invoke(p);
             StartCoroutine(PickUp(p.gameObject));
         }
 
+        void Throw(PropKind kind, float speed)
+        {
+            Hands.Play(Hands.Give);
+            var from = cam.transform.position + cam.transform.forward * 0.45f + cam.transform.right * 0.12f;
+            var cc = GetComponent<CharacterController>();
+            var velocity = cam.transform.forward * speed + Vector3.up * 1.5f + (cc != null ? cc.velocity : Vector3.zero);
+            Threw?.Invoke(kind, from, velocity);
+        }
+
         /// What you picked up comes to your hand, then down into the bag.
         IEnumerator PickUp(GameObject go)
         {
-            foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
-            Destroy(go.GetComponent<Pickup>());
-            go.transform.SetParent(cam.transform, true);
-            SetLayer(go);   // drawn on top, like the bag
-            var t0 = go.transform.localPosition;
-            var r0 = go.transform.localRotation;
-            var s0 = go.transform.localScale;
-            var hand = new Vector3(0.12f, -0.2f, 0.42f);
-            var held = Quaternion.Euler(-20f, 25f, 0f);
-            yield return Move(go.transform, t0, hand, r0, held, 0.3f, 0.06f);
-            yield return new WaitForSeconds(0.15f);
-            var bag = new Vector3(0.05f, -0.6f, 0.2f);
-            for (float t = 0f; t < 1f && go != null; t += Time.deltaTime / 0.25f)
+            var item = go.transform;
+            Holding = item;
+            Hands.Play(Hands.Pickup);
+            try
             {
-                float e = t * t;
-                go.transform.localPosition = Vector3.Lerp(hand, bag, e);
-                go.transform.localScale = s0 * Mathf.Lerp(1f, 0.6f, e);
-                yield return null;
+                foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
+                Destroy(go.GetComponent<Pickup>());
+                item.SetParent(cam.transform, true);
+                SetLayer(go);   // drawn on top, like the bag
+                var t0 = item.localPosition;
+                var r0 = item.localRotation;
+                var s0 = item.localScale;
+                var hand = new Vector3(0.12f, -0.2f, 0.42f);
+                var held = Quaternion.Euler(-20f, 25f, 0f);
+                yield return Move(item, t0, hand, r0, held, 0.3f, 0.06f);
+                yield return new WaitForSeconds(0.15f);
+                var bag = new Vector3(0.05f, -0.6f, 0.2f);
+                for (float t = 0f; t < 1f && go != null; t += Time.deltaTime / 0.25f)
+                {
+                    float e = t * t;
+                    item.localPosition = Vector3.Lerp(hand, bag, e);
+                    item.localScale = s0 * Mathf.Lerp(1f, 0.6f, e);
+                    yield return null;
+                }
+                if (go != null) Destroy(go);
             }
-            if (go != null) Destroy(go);
+            finally { if (Holding == item) Holding = null; }
         }
 
         /// Eases `item` from one pose to another (local to the camera), with a little lift on the way.
@@ -285,6 +358,7 @@ namespace Backrooms.Player
         /// Level Fun's cake and drinks: they fill you up and take something from your mind.
         void Eat(Game.PartyFood food)
         {
+            Hands.Play(food.Drink ? Hands.Drink : Hands.Eat);
             if (food.Drink) status.Thirst = Mathf.Min(1f, status.Thirst + 0.4f);
             else { status.Thirst = Mathf.Min(1f, status.Thirst + 0.1f); status.Stamina = 1f; }
             status.Sanity = Mathf.Max(0f, status.Sanity - 0.3f);
@@ -315,6 +389,7 @@ namespace Backrooms.Player
         public bool UseBattery()
         {
             if (status.Batteries <= 0) return false;
+            Hands.Play(Hands.Battery);
             status.Batteries--;
             if (FlashlightBattery <= CamcorderBattery) FlashlightBattery = 1f;
             else CamcorderBattery = 1f;
@@ -389,11 +464,47 @@ namespace Backrooms.Player
             if (shownWater != status.AlmondWater || shownBatteries != status.Batteries) FillBag();
             if (drinkPad.WasPressedThisFrame()) GrabFromBag("Water");
             if (batteryPad.WasPressedThisFrame()) GrabFromBag("Battery");
-            if (Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame) return;
-            var ray = bagCam.ScreenPointToRay(Mouse.current.position.ReadValue());
-            if (Physics.Raycast(ray, out var hit, 2f, 1 << BagContentsLayer, QueryTriggerInteraction.Collide)
-                && (hit.collider.name == "Water" || hit.collider.name == "Battery"))
-                StartCoroutine(Grab(hit.collider.transform));
+            if (Mouse.current == null) return;
+            var pick = PickItem(Mouse.current.position.ReadValue());
+            Hover(pick);
+            if (pick != null && Mouse.current.leftButton.wasPressedThisFrame) { Hover(null); StartCoroutine(Grab(pick)); }
+        }
+
+        Transform hovered;
+        Vector3 hoverBase;
+
+        /// The item lifts a little while the cursor is on it, so you can see what a click will take.
+        void Hover(Transform item)
+        {
+            if (item == hovered) return;
+            if (hovered != null) hovered.localPosition = hoverBase;
+            hovered = item;
+            if (item == null) return;
+            hoverBase = item.localPosition;
+            item.localPosition = hoverBase + Vector3.up * 0.025f;
+        }
+
+        static bool IsBagItem(Transform t) => t.name == "Water" || t.name == "Battery";
+
+        /// What's under the cursor, or failing that the item drawn nearest to it (within a short reach on screen).
+        Transform PickItem(Vector2 mouse)
+        {
+            var ray = bagCam.ScreenPointToRay(mouse);
+            if (Physics.Raycast(ray, out var hit, 2f, 1 << BagContentsLayer, QueryTriggerInteraction.Collide) && IsBagItem(hit.collider.transform))
+                return hit.collider.transform;
+            var items = bagRoot.transform.Find("Items");
+            if (items == null) return null;
+            Transform best = null;
+            float bestDistance = 110f * Screen.height / 1080f;
+            foreach (Transform item in items)
+            {
+                if (!IsBagItem(item) || !item.TryGetComponent<MeshFilter>(out var mf) || mf.sharedMesh == null) continue;
+                var p = bagCam.WorldToScreenPoint(item.TransformPoint(mf.sharedMesh.bounds.center));
+                if (p.z <= 0f) continue;
+                float d = Vector2.Distance(p, mouse);
+                if (d < bestDistance) { bestDistance = d; best = item; }
+            }
+            return best;
         }
 
         void GrabFromBag(string kind)
@@ -409,26 +520,36 @@ namespace Backrooms.Player
         IEnumerator Grab(Transform item)
         {
             grabbing = true;
+            if (hovered == item) hovered = null;   // it's leaving the bag; don't snap it back
+            Holding = item;
             bool water = item.name == "Water";
-            Destroy(item.GetComponent<Collider>());
-            item.SetParent(cam.transform, true);
-            var hand = new Vector3(0.1f, -0.15f, 0.34f);
-            var held = Quaternion.Euler(-10f, 20f, 8f);
-            yield return Move(item, item.localPosition, hand, item.localRotation, held, 0.3f, 0.08f);
-            if (water)
+            if (water) Hands.Play(Hands.Drink);
+            try
             {
-                // Bottom away from you, top at your mouth.
-                yield return Move(item, hand, new Vector3(0f, 0.02f, 0.32f), held, Quaternion.Euler(-115f, 0f, 0f), 0.35f, 0f);
-                yield return new WaitForSeconds(0.6f);
-                status.Drink();
+                Destroy(item.GetComponent<Collider>());
+                item.SetParent(cam.transform, true);
+                var hand = new Vector3(0.1f, -0.15f, 0.34f);
+                var held = Quaternion.Euler(-10f, 20f, 8f);
+                yield return Move(item, item.localPosition, hand, item.localRotation, held, 0.3f, 0.08f);
+                if (water)
+                {
+                    // Bottom away from you, top at your mouth.
+                    yield return Move(item, hand, new Vector3(0f, 0.02f, 0.32f), held, Quaternion.Euler(-115f, 0f, 0f), 0.35f, 0f);
+                    yield return new WaitForSeconds(0.6f);
+                    status.Drink();
+                }
+                else
+                {
+                    yield return Move(item, hand, new Vector3(0.22f, -0.32f, 0.22f), held, Quaternion.Euler(60f, 0f, 0f), 0.3f, 0.02f);
+                    UseBattery();
+                }
+                if (item != null) Destroy(item.gameObject);
             }
-            else
+            finally
             {
-                yield return Move(item, hand, new Vector3(0.22f, -0.32f, 0.22f), held, Quaternion.Euler(60f, 0f, 0f), 0.3f, 0.02f);
-                UseBattery();
+                if (Holding == item) Holding = null;
+                grabbing = false;
             }
-            if (item != null) Destroy(item.gameObject);
-            grabbing = false;
         }
 
         /// The bag: an open canvas bag held in front of you, drawn by its own camera so it never clips into walls.
@@ -537,9 +658,9 @@ namespace Backrooms.Player
             var thermos = ModelLibrary.Standalone("AlmondWater", out var tn);
             var battery = ModelLibrary.Standalone("Battery", out var bn);
             for (int i = 0; i < Mathf.Min(status.AlmondWater, 5) && thermos != null; i++)
-                Item(items, "Water", thermos, tn, new Vector3(-0.15f + 0.075f * i, 0.02f, 0.07f), i * 37f, paints, ModelLibrary.CapPaint(i + 1));
+                Item(items, "Water", thermos, tn, new Vector3(-0.15f + 0.075f * i, 0.02f, -0.06f), i * 37f, paints, ModelLibrary.CapPaint(i + 1));
             for (int i = 0; i < Mathf.Min(status.Batteries, 7) && battery != null; i++)
-                Item(items, "Battery", battery, bn, new Vector3(-0.15f + 0.05f * i, 0.02f, -0.015f), i * 53f, paints, PropPaint.Metal);
+                Item(items, "Battery", battery, bn, new Vector3(-0.15f + 0.05f * i, 0.02f, 0.035f), i * 53f, paints, PropPaint.Metal);
             SetLayer(items.gameObject, BagContentsLayer);
         }
 
@@ -581,7 +702,7 @@ namespace Backrooms.Player
             go.AddComponent<MeshRenderer>().sharedMaterials = mats;
             var box = go.AddComponent<BoxCollider>();
             box.center = mesh.bounds.center;
-            box.size = mesh.bounds.size + Vector3.one * 0.01f;
+            box.size = mesh.bounds.size + Vector3.one * 0.035f;   // generous, so a near miss still counts
         }
 
         void Child(string name, Mesh mesh, Material mat)
